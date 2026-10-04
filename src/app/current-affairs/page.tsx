@@ -20,13 +20,17 @@ export default function CurrentAffairs() {
 
   const manifest = useAsync(() => content<{ versions: Record<string, string> }>("manifest.json"), []);
   useEffect(() => {
-    const d = q.get("date") || manifest.data?.versions["ca/latest"];
+    const today = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);   // IST
+    const d = q.get("date") || manifest.data?.versions["ca/latest"] || (manifest.loading ? "" : today);
     if (d) setDate(d);
-  }, [q, manifest.data]);
+  }, [q, manifest.data, manifest.loading]);
 
   const month = date.slice(0, 7);
   const index = useAsync(async () => (month ? content<{ days: string[] }>(`ca/index-${month}.json`) : null), [month]);
-  const day = useAsync(async () => (date ? content<{ date: string; articles: CACard[] }>(`ca/${date}.json`) : null), [date]);
+  // Never show an empty brief: if the chosen day has no cards yet (today's paper not processed), fall back to
+  // the newest earlier day that has them — looking back across month boundaries if needed.
+  const day = useAsync(async () => (date ? latestBrief(date) : null), [date]);
+  const shownDate = day.data?.date ?? date;
 
   if (!session) return null;
   const arts = (day.data?.articles ?? []).filter((a) => gs === "ALL" || a.gs_tags.includes(gs));
@@ -37,8 +41,8 @@ export default function CurrentAffairs() {
       "A daily CA quiz built from the same paper", "Unlimited with a Daily or Monthly Pass"] }}>
       <PageHeader kicker="Current affairs" title="The daily brief"
         sub="The day's newspaper, distilled for UPSC — our own summaries with static facts, Prelims and Mains angles. Each day's stories also feed the quiz and the question bank."
-        action={<Button variant="lime" onClick={() => dailyQuiz(setLaunch, date || undefined)}>
-          <Play size={16} /> Take {date ? fmtDate(date) : "today's"} quiz</Button>} />
+        action={<Button variant="lime" onClick={() => dailyQuiz(setLaunch, shownDate || undefined)}>
+          <Play size={16} /> Take {shownDate ? fmtDate(shownDate) : "today's"} quiz</Button>} />
       <LaunchOverlay state={launchState} onClose={() => setLaunch({ kind: "idle" })} />
 
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -46,7 +50,7 @@ export default function CurrentAffairs() {
           {(index.data?.days ?? []).map((d) => (
             <button key={d} onClick={() => setDate(d)}
               className={cx("shrink-0 rounded-2xl border-2 px-3 py-1.5 text-sm font-semibold",
-                d === date ? "border-ink bg-ink text-bg dark:border-primary dark:bg-primary" : "border-line hover:border-ink")}>
+                d === shownDate ? "border-ink bg-ink text-bg dark:border-primary dark:bg-primary" : "border-line hover:border-ink")}>
               {new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
             </button>
           ))}
@@ -57,7 +61,13 @@ export default function CurrentAffairs() {
       </div>
 
       {day.loading || manifest.loading ? <Loading /> : day.error || manifest.error ? <ErrorBox error={day.error ?? manifest.error} /> :
-        arts.length === 0 ? <Empty icon="📰" title="No cards here">The digest appears once the day&apos;s newspaper is processed (by 08:00 IST).</Empty> : (
+        !day.data ? <Empty icon="📰" title="The first brief is on its way">Cards appear as soon as a newspaper is processed.</Empty> :
+        arts.length === 0 ? <Empty icon="📰" title={`No ${gs} stories in this brief`}>Pick “All” or another paper to see the rest.</Empty> : (
+          <>
+          {day.data.date !== date && (
+            <p className="mb-4 rounded-2xl bg-surface-2 px-4 py-2.5 text-sm text-ink-2">
+              The brief for {fmtDate(date)} isn&apos;t in yet — showing the latest one, from <b>{fmtDate(day.data.date)}</b>.</p>
+          )}
           <div className="grid gap-5 md:grid-cols-2">
             {arts.map((a, i) => (
               <Card key={a.id} sticker={i === 0} className={cx(i === 0 && "md:col-span-2")}>
@@ -91,8 +101,32 @@ export default function CurrentAffairs() {
               </Card>
             ))}
           </div>
+          </>
         )}
       <p className="mt-8 text-xs text-muted">Summaries are TamGam&apos;s own words written from licensed newspaper editions; we never republish article text. Not affiliated with any newspaper.</p>
     </AppShell>
   );
+}
+
+
+type Brief = { date: string; articles: CACard[] };
+
+function prevMonth(m: string) {
+  const [y, mo] = m.split("-").map(Number);
+  return mo > 1 ? `${y}-${String(mo - 1).padStart(2, "0")}` : `${y - 1}-12`;
+}
+
+/** The brief for `target`, or — if that day has no cards yet — the newest earlier day that does (up to 3 months back). */
+async function latestBrief(target: string): Promise<Brief | null> {
+  const exact = await content<Brief>(`ca/${target}.json`).catch(() => null);
+  if (exact?.articles.length) return exact;
+  let m = target.slice(0, 7);
+  for (let k = 0; k < 3; k++, m = prevMonth(m)) {
+    const idx = await content<{ days: string[] }>(`ca/index-${m}.json`).catch(() => null);
+    for (const d of (idx?.days ?? []).filter((d) => d < target).sort().reverse()) {
+      const b = await content<Brief>(`ca/${d}.json`).catch(() => null);
+      if (b?.articles.length) return b;
+    }
+  }
+  return null;
 }
