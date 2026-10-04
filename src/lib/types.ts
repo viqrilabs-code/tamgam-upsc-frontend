@@ -6,6 +6,7 @@ export type Question = {
   topic_ids: string[];
   stem: string;
   statements?: string[];
+  tail?: string | null;      // official closing line of a PYQ ("How many of the above are correct?")
   options?: string[];
   word_limit?: number;
   marks?: number;
@@ -41,7 +42,7 @@ export type Created = { test_id: string; attempt_id: string; scope: string };
 export type RowStat = { key: string; total: number; attempted: number; correct: number; accuracy: number | null; name?: string };
 
 export type Explanation = {
-  qid: string; stem: string; statements: string[]; options: string[]; answer_key: number; explanation: string;
+  qid: string; stem: string; statements: string[]; tail?: string | null; options: string[]; answer_key: number; explanation: string;
   elimination_hint?: string; format: string; bucket: string; topic_ids: string[]; topic_name?: string;
   your_choice: number | null; correct: boolean | null; flagged?: boolean; sample?: boolean;
   pyq_ref?: { year: number; paper: string };

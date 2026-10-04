@@ -139,8 +139,9 @@ export default function ResultPage() {
             </div>
             <p className="mt-3 font-semibold">{e.stem}</p>
             {!!e.statements?.length && (
-              <ol className="mt-2 space-y-1 text-sm text-ink-2">{e.statements.map((s, i) => <li key={i}>{e.format === "STATEMENT_I_II" ? s : `${i + 1}. ${s}`}</li>)}</ol>
+              <ol className="mt-2 space-y-1 text-sm text-ink-2">{e.statements.map((s, i) => <li key={i}>{e.format === "STATEMENT_I_II" || /^[IVX]+\.\s/.test(s) ? s : `${i + 1}. ${s}`}</li>)}</ol>
             )}
+            {e.tail && <p className="mt-2 text-sm font-semibold">{e.tail}</p>}
             <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
               {e.options.map((o, i) => (
                 <div key={i} className={cx("rounded-xl border-2 px-3 py-1.5 text-sm",

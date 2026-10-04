@@ -104,7 +104,8 @@ export default function PyqLab() {
                       {it.sample && <Chip tone="saffron">sample</Chip>}
                     </div>
                     <p className="mt-3 font-semibold">{it.stem}</p>
-                    {!!it.statements?.length && <ol className="mt-2 space-y-1 text-sm text-ink-2">{it.statements.map((s, j) => <li key={j}>{it.format === "STATEMENT_I_II" ? s : `${j + 1}. ${s}`}</li>)}</ol>}
+                    {!!it.statements?.length && <ol className="mt-2 space-y-1 text-sm text-ink-2">{it.statements.map((s, j) => <li key={j}>{it.format === "STATEMENT_I_II" || /^[IVX]+\.\s/.test(s) ? s : `${j + 1}. ${s}`}</li>)}</ol>}
+                    {it.tail && <p className="mt-2 text-sm font-semibold">{it.tail}</p>}
                     {!!it.options?.length && (
                       <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
                         {it.options.map((o, j) => (

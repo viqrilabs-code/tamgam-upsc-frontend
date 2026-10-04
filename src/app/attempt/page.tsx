@@ -13,6 +13,7 @@ import { resultUrl } from "@/lib/tests";
 import type { Answer, TestView } from "@/lib/types";
 
 const MAX_PHOTOS = 8;
+const ROMAN_LABEL = /^[IVX]+\.\s/;      // official PYQs that number statements I, II, III keep their own labels
 
 const LETTERS = ["a", "b", "c", "d"];
 const CONF: { v: Answer["confidence"]; label: string }[] = [
@@ -224,7 +225,7 @@ export default function AttemptPage() {
             <ol className="mt-3 space-y-2">
               {cur.statements.map((s, i) => (
                 <li key={i} className="rounded-2xl bg-surface-2 px-4 py-2.5 text-[15px]">
-                  {cur.format === "STATEMENT_I_II" ? s : <><span className="font-mono font-bold text-primary">{i + 1}.</span> {s}</>}
+                  {cur.format === "STATEMENT_I_II" || ROMAN_LABEL.test(s) ? s : <><span className="font-mono font-bold text-primary">{i + 1}.</span> {s}</>}
                 </li>
               ))}
             </ol>
@@ -232,7 +233,8 @@ export default function AttemptPage() {
 
           {cur.stage === "PRELIMS" ? (
             <>
-              {!!cur.statements?.length && cur.format !== "STATEMENT_I_II" && <p className="mt-4 text-sm font-semibold text-ink-2">Which of the above is/are correct?</p>}
+              {cur.tail ? <p className="mt-4 text-[15px] font-semibold">{cur.tail}</p>
+                : !!cur.statements?.length && cur.format !== "STATEMENT_I_II" && <p className="mt-4 text-sm font-semibold text-ink-2">Which of the above is/are correct?</p>}
               <div className="mt-3 grid gap-2">
                 {(cur.options ?? []).map((o, i) => (
                   <button key={i} onClick={() => choose(cur.qid, { choice: a.choice === i ? null : i })}
