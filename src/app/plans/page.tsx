@@ -48,6 +48,7 @@ export default function Plans() {
       {ent && (
         <Card className="mb-6 flex flex-wrap items-center gap-3">
           <div><div className="text-xs text-muted">Current plan</div><div className="font-display text-xl font-bold">{ent.plan_name}</div></div>
+          {ent.plan === "ADMIN" && <Chip tone="green">every service is free and unlimited for admins — no purchase needed</Chip>}
           {ent.valid_till && <Chip tone="green">active till {new Date(ent.valid_till).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</Chip>}
         </Card>
       )}
@@ -66,10 +67,10 @@ export default function Plans() {
                     <span className="text-base text-muted">{p.days === 1 ? " / 24 hours" : p.days ? ` / ${p.days} days` : ""}</span></div>
                   <p className="mt-2 text-sm text-ink-2">{p.tagline}</p>
                   <div className="flex-1" />
-                  {p.price_paise > 0 ? (
+                  {p.price_paise > 0 && ent?.plan !== "ADMIN" ? (
                     <Button className="mt-5" variant={hot ? "primary" : "outline"} loading={busy === id} onClick={() => buy(id)}>
                       {current ? "Buy again (fresh allowances)" : `Get ${p.name}`}</Button>
-                  ) : <div className="mt-5 text-center text-sm font-semibold text-muted">{current ? "You're on this plan" : "Included with sign-in"}</div>}
+                  ) : <div className="mt-5 text-center text-sm font-semibold text-muted">{current ? "You're on this plan" : ent?.plan === "ADMIN" ? "Included for admins" : "Included with sign-in"}</div>}
                 </Card>
               );
             })}

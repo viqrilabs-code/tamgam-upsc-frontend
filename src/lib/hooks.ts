@@ -43,7 +43,7 @@ export function useSession(redirect = true): Session | null {
 }
 
 export type Entitlements = {
-  plan: "FREE" | "DAILY_PASS" | "MONTHLY_PASS"; plan_name: string; valid_till?: string | null;
+  plan: "FREE" | "DAILY_PASS" | "MONTHLY_PASS" | "ADMIN"; plan_name: string; valid_till?: string | null;
   services: Record<string, { label: string; allowed: boolean; limit: number | null; used: number; remaining: number | null }>;
   caps: { sectional_max_questions?: number; full_length_max_questions?: number };
 };

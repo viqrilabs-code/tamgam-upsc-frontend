@@ -3,12 +3,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Flag, ImagePlus, Pause, Play, Send } from "lucide-react";
+import CameraCapture from "@/components/CameraCapture";
+import MainsPdfUpload from "@/components/MainsPdfUpload";
 import { Button, Chip, ErrorBox, Loading, Logo, Modal, cx } from "@/components/ui";
 import { api, apiWithStatus, putSigned } from "@/lib/api";
 import { useSearch, useSession } from "@/lib/hooks";
 import { BUCKET_LABEL, FORMAT_LABEL, fmtDuration } from "@/lib/labels";
 import { resultUrl } from "@/lib/tests";
 import type { Answer, TestView } from "@/lib/types";
+
+const MAX_PHOTOS = 8;
 
 const LETTERS = ["a", "b", "c", "d"];
 const CONF: { v: Answer["confidence"]; label: string }[] = [
@@ -29,6 +33,7 @@ export default function AttemptPage() {
   const [left, setLeft] = useState(0);
   const [confirm, setConfirm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [saveState, setSaveState] = useState<"saved" | "saving" | "dirty">("saved");
   const dirty = useRef<Set<string>>(new Set());
   const shownAt = useRef<number>(Date.now());
@@ -46,6 +51,14 @@ export default function AttemptPage() {
       setImages(Object.fromEntries(Object.entries(t.mains_answers ?? {}).map(([k, v]) => [k, v.image_paths ?? []])));
       idemKey.current = `${t.attempt_id}-${crypto.randomUUID()}`;
     }).catch(setErr);
+  }, [scope, testId]);
+
+  // After a whole-paper PDF is split, pull the per-question answers it created (typed text stays as typed).
+  const reloadMains = useCallback(async () => {
+    if (!scope || !testId) return;
+    const t = await api<TestView>(`/api/v1/${scope}/tests/${testId}`);
+    setTest(t);
+    setImages(Object.fromEntries(Object.entries(t.mains_answers ?? {}).map(([k, v]) => [k, v.image_paths ?? []])));
   }, [scope, testId]);
 
   // Prelims autosave: batch every 30 s or 10 answers (LLD §5.1).
@@ -153,6 +166,7 @@ export default function AttemptPage() {
   async function addPage(qid: string, file: File) {
     if (!test) return;
     const page = (images[qid]?.length ?? 0) + 1;
+    if (page > MAX_PHOTOS) throw new Error(`Up to ${MAX_PHOTOS} pages per answer`);
     const up = await api<{ path: string; upload_url: string }>(`/api/v1/${scope}/attempts/${test.attempt_id}/mains-uploads`, {
       method: "POST", json: { qid, page, content_type: file.type || "image/jpeg" },
     });
@@ -189,6 +203,12 @@ export default function AttemptPage() {
       </header>
 
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pt-6 lg:grid-cols-[1fr_280px]">
+        {test.stage === "MAINS" && (
+          <div className="lg:col-span-2">
+            <MainsPdfUpload scope={scope} attemptId={test.attempt_id} questions={test.questions}
+              initial={test.mains_pdf} onDone={() => { reloadMains().catch(setErr); }} />
+          </div>
+        )}
         <section className="pop rounded-3xl bg-surface p-6 sticker" key={cur.qid}>
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-display text-lg font-extrabold">Q{idx + 1}<span className="text-muted">/{test.questions.length}</span></span>
@@ -249,13 +269,34 @@ export default function AttemptPage() {
                   const limit = cur.word_limit ?? 250;
                   return <span className={cx("font-mono font-semibold", w > limit * 1.1 ? "text-danger" : "text-ink-2")}>{w} / {limit} words</span>;
                 })()}
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border-2 border-line px-3 py-1.5 font-semibold hover:border-ink">
-                  <ImagePlus size={16} /> Add page photo
-                  <input type="file" accept="image/jpeg,image/png,image/heic" className="hidden"
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) addPage(cur.qid, f).catch(setErr); e.target.value = ""; }} />
-                </label>
+                {(() => {
+                  const full = (images[cur.qid]?.length ?? 0) >= MAX_PHOTOS;
+                  const add = (f: File) => { setUploading(true); addPage(cur.qid, f).catch(setErr).finally(() => setUploading(false)); };
+                  return (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CameraCapture disabled={full || uploading} onPhoto={add} />
+                      <label className={cx("inline-flex cursor-pointer items-center gap-2 rounded-2xl border-2 border-line px-3 py-1.5 font-semibold hover:border-ink",
+                        (full || uploading) && "pointer-events-none opacity-50")}>
+                        <ImagePlus size={16} /> {uploading ? "Uploading…" : "Upload image"}
+                        <input type="file" accept="image/jpeg,image/png,image/heic" className="hidden" disabled={full || uploading}
+                          onChange={(e) => { const f = e.target.files?.[0]; if (f) add(f); e.target.value = ""; }} />
+                      </label>
+                    </div>
+                  );
+                })()}
               </div>
-              {!!images[cur.qid]?.length && <p className="mt-2 text-xs text-muted">{images[cur.qid].length} page photo(s) attached — they&apos;ll be transcribed before evaluation.</p>}
+              {(() => {
+                const m = test.mains_answers?.[cur.qid];
+                const n = images[cur.qid]?.length ?? 0;
+                const fromPdf = m?.source === "pdf" && JSON.stringify(m.image_paths ?? []) === JSON.stringify(images[cur.qid] ?? []);
+                if (fromPdf) return (
+                  <div className="mt-3 rounded-2xl bg-surface-2 p-3 text-xs">
+                    <div className="font-semibold text-ink-2">From your PDF — page{(m.pdf_pages?.length ?? 0) > 1 ? "s" : ""} {m.pdf_pages?.join(", ")}</div>
+                    {m.transcript_preview && <p className="mt-1 whitespace-pre-line text-muted">{m.transcript_preview}{m.transcript_preview.length >= 400 ? "…" : ""}</p>}
+                  </div>
+                );
+                return n ? <p className="mt-2 text-xs text-muted">{n} page photo(s) attached{n >= MAX_PHOTOS ? " (maximum)" : ""} — they&apos;ll be transcribed before evaluation.</p> : null;
+              })()}
             </div>
           )}
 

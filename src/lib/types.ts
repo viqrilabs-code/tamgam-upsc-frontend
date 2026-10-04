@@ -27,7 +27,9 @@ export type TestView = {
   title?: string;
   questions: Question[];
   answers: Record<string, Answer>;
-  mains_answers: Record<string, { text?: string; image_paths?: string[] }>;
+  mains_answers: Record<string, { text?: string; image_paths?: string[]; source?: "typed" | "photos" | "pdf" | null;
+    pdf_pages?: number[] | null; transcript_preview?: string | null }>;
+  mains_pdf?: MainsPdfState | null;
   time_limit_s: number;
   expires_at: string;
   started_at: string;
@@ -94,3 +96,7 @@ export type NoteView = {
   note_id: string; kind: "TOPIC" | "UPLOAD"; status?: string; title?: string; topic_id?: string; topic_name?: string;
   version?: number; generated_by?: string; cornell?: Cornell; style?: NoteStyle; error?: string; pages?: number; source_pages?: [number, number];
 };
+
+export type MainsPdfState = { upload_id: string; status: "QUEUED" | "PROCESSING" | "DONE" | "FAILED"; progress: number;
+  message?: string; pages?: number; assignments: Record<string, { qno: number; pages: number[]; words: number }>;
+  unassigned_pages: number[]; error?: string | null };
