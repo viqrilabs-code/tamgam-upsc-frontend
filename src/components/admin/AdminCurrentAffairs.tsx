@@ -51,7 +51,7 @@ export default function AdminCurrentAffairs() {
         <Card sticker>
           <form onSubmit={upload} className="space-y-3">
             <div className="font-display font-bold">Upload today&apos;s newspaper</div>
-            <p className="text-xs text-ink-2">Only pages with a readable text layer are used — image-only pages or pages whose fonts can't be decoded are skipped (no OCR), so upload the text version of the e-paper. Readable pages are read one by one; UPSC-relevant stories become own-words cards, and each story gets Prelims MCQs and a Mains question (critic + guardrails) stored in the question bank. Article text is never stored.</p>
+            <p className="text-xs text-ink-2">Pages with a readable text layer are used directly; scanned pages and e-papers with scrambled fonts are read with AI vision (about ₹50 for a 22-page broadsheet, needs OpenAI credit). Pages are read one by one; UPSC-relevant stories become own-words cards, and each story gets Prelims MCQs and a Mains question (critic + guardrails) stored in the question bank. Article text is never stored.</p>
             <div className="flex gap-2">
               <input type="date" className={field} value={date} onChange={(e) => setDate(e.target.value)} required />
               <input className={field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Newspaper name" required />
