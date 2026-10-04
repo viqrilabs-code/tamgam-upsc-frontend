@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* TamGam tokens — "exam paper" calm for UPSC seriousness, sticker accents for Gen Z energy. */
+:root {
+  --bg: #fbf8f1;
+  --surface: #ffffff;
+  --surface-2: #f4efe3;
+  --ink: #17152b;
+  --ink-2: #4a4763;
+  --muted: #77738c;
+  --line: #e6dfcf;
+  --primary: #5b4cf0;      /* chakra violet */
+  --primary-ink: #ffffff;
+  --primary-soft: #ece9ff;
+  --saffron: #f47a0b;
+  --saffron-soft: #fff0e0;
+  --green: #0f8a47;
+  --green-soft: #e3f6ea;
+  --lime: #c6f432;         /* sticker highlight */
+  --pink: #ff4d8d;
+  --danger: #d92d43;
+  --danger-soft: #fde7ea;
+  --shadow: #17152b;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0e0d18;
+  --surface: #17162a;
+  --surface-2: #1f1d36;
+  --ink: #f3f1ff;
+  --ink-2: #c9c5e0;
+  --muted: #9a96b4;
+  --line: #2c2a47;
+  --primary: #8f82ff;
+  --primary-ink: #0e0d18;
+  --primary-soft: #26224d;
+  --saffron: #ffa24c;
+  --saffron-soft: #3a2614;
+  --green: #3ddc8f;
+  --green-soft: #12301f;
+  --lime: #d4ff4f;
+  --pink: #ff6fa3;
+  --danger: #ff6b7d;
+  --danger-soft: #3a1820;
+  --shadow: #000000;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-primary: var(--primary);
+  --color-primary-ink: var(--primary-ink);
+  --color-primary-soft: var(--primary-soft);
+  --color-saffron: var(--saffron);
+  --color-saffron-soft: var(--saffron-soft);
+  --color-green: var(--green);
+  --color-green-soft: var(--green-soft);
+  --color-lime: var(--lime);
+  --color-pink: var(--pink);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+html, body { background: var(--bg); color: var(--ink); }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+
+/* sticker card: chunky border + offset shadow */
+.sticker {
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 0 var(--shadow);
+}
+.dark .sticker { border-color: var(--line); box-shadow: 4px 4px 0 0 #000; }
+.sticker-hover { transition: transform .12s ease, box-shadow .12s ease; }
+.sticker-hover:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 0 var(--shadow); }
+.sticker-hover:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 0 var(--shadow); }
+
+.tricolor { background: linear-gradient(90deg, #ff9933 0 33.3%, #ffffff 33.3% 66.6%, #138808 66.6% 100%); }
+.dark .tricolor { background: linear-gradient(90deg, #ff9933 0 33.3%, #e8e8e8 33.3% 66.6%, #138808 66.6% 100%); }
+
+.grain {
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 7%, transparent) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+.chakra-spin { animation: spin-slow 2.4s linear infinite; }
+@keyframes pop { 0% { transform: scale(.96); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+.pop { animation: pop .18s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .chakra-spin, .pop { animation: none; }
+  .sticker-hover:hover { transform: none; }
+}
+
+:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: 8px; }
+
+@keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+
+/* faint repeating site mark behind Cornell notes (matches the PDF watermark) */
+.note-watermark {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='220'%3E%3Ctext x='20' y='150' transform='rotate(-30 180 110)' font-family='Arial' font-weight='700' font-size='26' fill='%235b4cf0' fill-opacity='0.05'%3Ehttps://tamgam.in%3C/text%3E%3C/svg%3E");
+  background-repeat: repeat;
+}

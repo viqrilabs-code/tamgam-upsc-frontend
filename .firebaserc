@@ -1,0 +1,5 @@
+{
+  "projects": { "default": "tamgam-upsc-web" },
+  "targets": { "tamgam-upsc-web": { "hosting": { "app": ["tamgam-upsc-app"] } } },
+  "etags": {}
+}

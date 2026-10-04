@@ -1,0 +1,48 @@
+name: frontend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - name: Static export
+        env:
+          NEXT_PUBLIC_API_BASE: ""   # same origin: Firebase Hosting rewrites /api/** to tamgam-api
+          NEXT_PUBLIC_CONTENT_BASE: https://${{ vars.CONTENT_SITE_ID }}.web.app
+        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with: { name: site, path: out, retention-days: 7 }
+
+  deploy:
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions: { contents: read, id-token: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: site, path: out }
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - name: Deploy to Firebase Hosting (site "app")
+        run: |
+          npx -y firebase-tools@14 target:apply hosting app "${{ vars.APP_SITE_ID }}" --project "${{ vars.GCP_PROJECT_ID }}"
+          npx -y firebase-tools@14 deploy --only hosting:app --project "${{ vars.GCP_PROJECT_ID }}" --non-interactive \
+            --message "${GITHUB_SHA::12}"
