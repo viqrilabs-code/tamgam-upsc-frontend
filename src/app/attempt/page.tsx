@@ -9,10 +9,10 @@ import { Button, Chip, ErrorBox, Loading, Logo, Modal, cx } from "@/components/u
 import { api, apiWithStatus, putSigned } from "@/lib/api";
 import { useSearch, useSession } from "@/lib/hooks";
 import { BUCKET_LABEL, FORMAT_LABEL, fmtDuration } from "@/lib/labels";
+import { mainsPageLimit } from "@/lib/limits";
 import { resultUrl } from "@/lib/tests";
 import type { Answer, TestView } from "@/lib/types";
 
-const MAX_PHOTOS = 8;
 const ROMAN_LABEL = /^[IVX]+\.\s/;      // official PYQs that number statements I, II, III keep their own labels
 
 const LETTERS = ["a", "b", "c", "d"];
@@ -167,7 +167,9 @@ export default function AttemptPage() {
   async function addPage(qid: string, file: File) {
     if (!test) return;
     const page = (images[qid]?.length ?? 0) + 1;
-    if (page > MAX_PHOTOS) throw new Error(`Up to ${MAX_PHOTOS} pages per answer`);
+    const q = test.questions.find((x) => x.qid === qid);
+    const limit = mainsPageLimit(q?.word_limit);
+    if (page > limit) throw new Error(`A ${q?.word_limit ?? 150}-word answer can have at most ${limit} pages — remove a page before adding another.`);
     const up = await api<{ path: string; upload_url: string }>(`/api/v1/${scope}/attempts/${test.attempt_id}/mains-uploads`, {
       method: "POST", json: { qid, page, content_type: file.type || "image/jpeg" },
     });
@@ -272,7 +274,7 @@ export default function AttemptPage() {
                   return <span className={cx("font-mono font-semibold", w > limit * 1.1 ? "text-danger" : "text-ink-2")}>{w} / {limit} words</span>;
                 })()}
                 {(() => {
-                  const full = (images[cur.qid]?.length ?? 0) >= MAX_PHOTOS;
+                  const full = (images[cur.qid]?.length ?? 0) >= mainsPageLimit(cur.word_limit);
                   const add = (f: File) => { setUploading(true); addPage(cur.qid, f).catch(setErr).finally(() => setUploading(false)); };
                   return (
                     <div className="flex flex-wrap items-center gap-2">
@@ -297,7 +299,17 @@ export default function AttemptPage() {
                     {m.transcript_preview && <p className="mt-1 whitespace-pre-line text-muted">{m.transcript_preview}{m.transcript_preview.length >= 400 ? "…" : ""}</p>}
                   </div>
                 );
-                return n ? <p className="mt-2 text-xs text-muted">{n} page photo(s) attached{n >= MAX_PHOTOS ? " (maximum)" : ""} — they&apos;ll be transcribed before evaluation.</p> : null;
+                const limit = mainsPageLimit(cur.word_limit);
+                return (
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted">
+                    <span>{n ? `${n} of ${limit} pages attached — they'll be transcribed before evaluation.` : `Handwritten? Up to ${limit} pages for a ${cur.word_limit ?? 150}-word answer.`}</span>
+                    {n >= limit && <span className="font-semibold text-saffron">Page limit reached.</span>}
+                    {n > 0 && (
+                      <button type="button" onClick={() => setImages((p) => ({ ...p, [cur.qid]: (p[cur.qid] ?? []).slice(0, -1) }))}
+                        className="rounded-lg border-2 border-line px-2 py-0.5 font-semibold text-ink-2 hover:border-ink">Remove last page</button>
+                    )}
+                  </div>
+                );
               })()}
             </div>
           )}

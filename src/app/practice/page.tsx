@@ -7,6 +7,7 @@ import LaunchOverlay from "@/components/LaunchOverlay";
 import MaterialPicker, { type Material } from "@/components/MaterialPicker";
 import WaitingRoom from "@/components/WaitingRoom";
 import { Button, Card, Chip, ErrorBox, PageHeader, Segmented, cx } from "@/components/ui";
+import { SOURCE_HINT, sourceFilesProblem } from "@/lib/limits";
 import { api, content, putSigned, sleep } from "@/lib/api";
 import { useAsync, useEntitlements, useSearch, useSession } from "@/lib/hooks";
 import { PAPERS } from "@/lib/labels";
@@ -65,9 +66,11 @@ export default function Practice() {
 
   async function uploadSource(files: File[]) {
     if (!sourceTopic || !files.length) return;
-    setSourceBusy(true);
     setSourceErr(undefined);
     setSource(null);
+    const problem = sourceFilesProblem(files);
+    if (problem) { setSourceErr(new Error(problem)); return; }
+    setSourceBusy(true);
     try {
       const meta = files.map((f) => ({ filename: f.name, content_type: f.type || "application/pdf", size: f.size }));
       const reg = await api<{ source_id: string; uploads: { upload_url: string; content_type: string }[] }>("/api/v1/library/my-sources", {
@@ -169,7 +172,7 @@ export default function Practice() {
             </label>
             <p className="ml-7 mt-1 text-sm text-muted">
               Upload your notes or a chapter for one topic. We check it&apos;s actually about that topic and safe, then write
-              UPSC-style questions only from it. Skip this to use TamGam&apos;s question bank.
+              UPSC-style questions only from it. Skip this to use TamGam&apos;s question bank. <b>{SOURCE_HINT}</b>
             </p>
             {useSource && (
               <div className="ml-7 mt-3 space-y-3">

@@ -99,5 +99,5 @@ export type NoteView = {
 };
 
 export type MainsPdfState = { upload_id: string; status: "QUEUED" | "PROCESSING" | "DONE" | "FAILED"; progress: number;
-  message?: string; pages?: number; assignments: Record<string, { qno: number; pages: number[]; words: number }>;
+  message?: string; pages?: number; assignments: Record<string, { qno: number; pages: number[]; words: number; trimmed?: number[]; page_limit?: number }>;
   unassigned_pages: number[]; error?: string | null };

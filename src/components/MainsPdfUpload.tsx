@@ -44,8 +44,9 @@ export default function MainsPdfUpload({ scope, attemptId, questions, initial, o
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="font-display font-bold">Wrote everything on paper? Upload one PDF</div>
-          <p className="text-xs text-ink-2">Scan all your answer pages into a single PDF (max 40 pages, 30 MB). Write the
-            question number (Q1, Q2 …) before each answer — we&apos;ll match pages to questions for you.</p>
+          <p className="text-xs text-ink-2">Scan all your answer pages into a single PDF (max 30 MB): up to 3 pages per 150-word
+            answer and 4 per 250-word answer, plus a cover page. Write the question number (Q1, Q2 …) before each answer —
+            we&apos;ll match pages to questions for you.</p>
         </div>
         <label className={cx("inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-2xl bg-primary px-4 py-2 text-sm font-bold text-primary-ink",
           (busy || running) && "pointer-events-none opacity-60")}>
@@ -65,7 +66,9 @@ export default function MainsPdfUpload({ scope, attemptId, questions, initial, o
           <div className="flex items-center gap-2 font-semibold text-green"><CheckCircle2 size={16} /> {state.message}</div>
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {Object.entries(state.assignments).sort((a, b) => a[1].qno - b[1].qno).map(([qid, v]) => (
-              <li key={qid} className="rounded-full bg-green-soft px-2.5 py-0.5 text-xs font-semibold">Q{qno(qid) || v.qno}: page{v.pages.length > 1 ? "s" : ""} {v.pages.join(", ")}</li>
+              <li key={qid} className={cx("rounded-full px-2.5 py-0.5 text-xs font-semibold", v.trimmed?.length ? "bg-saffron-soft" : "bg-green-soft")}
+                title={v.trimmed?.length ? `Only the first ${v.page_limit} pages are kept for this answer` : undefined}>
+                Q{qno(qid) || v.qno}: page{v.pages.length > 1 ? "s" : ""} {v.pages.join(", ")}{v.trimmed?.length ? ` (left out ${v.trimmed.join(", ")})` : ""}</li>
             ))}
           </ul>
           {!!state.unassigned_pages.length && <p className="mt-2 text-xs text-muted">Pages not matched to any question (cover, blank or rough work): {state.unassigned_pages.join(", ")}</p>}
