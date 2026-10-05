@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeIndianRupee, BookOpen, CreditCard, LayoutGrid, MessageSquareWarning, Newspaper, ShieldCheck, Users } from "lucide-react";
+import { BadgeIndianRupee, BookOpen, CreditCard, KeyRound, LayoutGrid, MessageSquareWarning, Newspaper, ShieldCheck, UserCog, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import AdminAdmins, { type AdminRow } from "@/components/admin/AdminAdmins";
 import AdminComplaints from "@/components/admin/AdminComplaints";
 import AdminCurrentAffairs from "@/components/admin/AdminCurrentAffairs";
 import AdminPayments from "@/components/admin/AdminPayments";
@@ -14,9 +15,9 @@ import { api } from "@/lib/api";
 import { useAsync, useSession } from "@/lib/hooks";
 import { FORMAT_LABEL, fmtDate } from "@/lib/labels";
 
-type Tab = "overview" | "users" | "plans" | "payments" | "complaints" | "sources" | "ca" | "quality";
+type Tab = "overview" | "users" | "admins" | "plans" | "payments" | "complaints" | "sources" | "ca" | "quality";
 const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
-  { id: "overview", label: "Overview", icon: LayoutGrid }, { id: "users", label: "Users", icon: Users },
+  { id: "overview", label: "Overview", icon: LayoutGrid }, { id: "users", label: "Users", icon: Users }, { id: "admins", label: "Admins", icon: UserCog },
   { id: "plans", label: "Plans & pricing", icon: BadgeIndianRupee }, { id: "payments", label: "Payments", icon: CreditCard }, { id: "complaints", label: "Complaints", icon: MessageSquareWarning },
   { id: "sources", label: "Sources (GS & optional)", icon: BookOpen }, { id: "ca", label: "Current affairs", icon: Newspaper },
   { id: "quality", label: "Question bank", icon: ShieldCheck },
@@ -28,11 +29,19 @@ type Overview = { complaints: Record<string, number>; payments: { revenue_paise:
 export default function Admin() {
   const session = useSession();
   const [tab, setTab] = useState<Tab>("overview");
+  const me = useAsync(() => session?.admin ? api<{ items: AdminRow[] }>("/api/v1/platform/admin/admins") : Promise.resolve({ items: [] }), [session?.admin]);
+  const mustChange = !!me.data?.items.find((a) => a.you)?.must_change_password;
   if (!session) return null;
   if (!session.admin) return <AppShell><Empty icon="🛡️" title="Admins only">Use “Login as Admin” on the sign-in page with the registered admin email and password.</Empty></AppShell>;
   return (
     <AppShell wide>
       <PageHeader kicker="Admin console" title="Run the show" sub="Users, payments, complaints, study sources and the daily newspaper — all in one place." />
+      {mustChange && (
+        <div className="mb-6 space-y-3 rounded-3xl border-2 border-saffron bg-saffron-soft p-4">
+          <div className="flex items-center gap-2 font-semibold"><KeyRound size={16} /> You're signed in with a temporary password — set your own now.</div>
+          <PasswordCard onChanged={me.reload} />
+        </div>
+      )}
       <div className="mb-6 flex gap-1.5 overflow-x-auto pb-1">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button key={id} onClick={() => setTab(id)}
@@ -44,6 +53,7 @@ export default function Admin() {
       </div>
       {tab === "overview" && <AdminOverview go={setTab} />}
       {tab === "users" && <AdminUsers />}
+      {tab === "admins" && <AdminAdmins />}
       {tab === "plans" && <AdminPlans />}
       {tab === "payments" && <AdminPayments />}
       {tab === "complaints" && <AdminComplaints />}
@@ -54,7 +64,7 @@ export default function Admin() {
   );
 }
 
-function PasswordCard() {
+function PasswordCard({ onChanged }: { onChanged?: () => void } = {}) {
   const [old, setOld] = useState("");
   const [next, setNext] = useState("");
   const [msg, setMsg] = useState<string>();
@@ -64,7 +74,7 @@ function PasswordCard() {
       <div className="mb-2 font-display text-lg font-bold">Admin password</div>
       <form className="flex flex-wrap gap-2" onSubmit={async (e) => {
         e.preventDefault(); setErr(undefined); setMsg(undefined);
-        try { await api("/api/v1/auth/admin/password", { method: "POST", json: { old_password: old, new_password: next } }); setMsg("Password changed ✓"); setOld(""); setNext(""); }
+        try { await api("/api/v1/auth/admin/password", { method: "POST", json: { old_password: old, new_password: next } }); setMsg("Password changed ✓"); setOld(""); setNext(""); onChanged?.(); }
         catch (e2) { setErr(e2); }
       }}>
         <input type="password" required placeholder="Current password" value={old} onChange={(e) => setOld(e.target.value)} className="rounded-2xl border-2 border-line bg-bg px-3 py-2 text-sm" />
