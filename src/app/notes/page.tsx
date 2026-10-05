@@ -6,6 +6,7 @@ import AppShell from "@/components/AppShell";
 import MaterialPicker, { type Material } from "@/components/MaterialPicker";
 import { Button, Card, Chip, Empty, ErrorBox, Modal, PageHeader, Segmented, cx } from "@/components/ui";
 import WaitingRoom from "@/components/WaitingRoom";
+import { NOTES_TOO_LONG, sourceFilesProblem } from "@/lib/limits";
 import { api, apiWithStatus, content, downloadFile, putSigned, sleep } from "@/lib/api";
 import { useAsync, useSearch, useSession } from "@/lib/hooks";
 import { fmtDate } from "@/lib/labels";
@@ -80,6 +81,8 @@ export default function Notes() {
 
   async function upload(files: File[]) {
     setErr(undefined);
+    const problem = sourceFilesProblem(files, NOTES_TOO_LONG);
+    if (problem) { setErr(new Error(problem)); return; }
     try {
       const up = await api<{ upload_id: string; uploads: { upload_url: string; content_type: string }[] }>("/api/v1/notes/uploads", {
         method: "POST", json: { files: files.map((f) => ({ filename: f.name, content_type: f.type || "application/pdf", size: f.size })) } });
@@ -136,16 +139,16 @@ export default function Notes() {
 
   return (
     <AppShell wide guestPreview={{ emoji: "📘", title: "Cornell notes, your way", points: [
-      "Syllabus topic notes that expand where you're weak", "Upload a whole book — pick a chapter — get a 1–4 page note",
+      "Syllabus topic notes that expand where you're weak", "Upload a chapter or topic handout — get a 1–4 page note",
       "Maps and diagrams cut from your pages into the note", "Download as a light PDF"] }}>
       <PageHeader kicker="Notes" title="Cornell notes, your way"
-        sub="Topic notes expand where you're weak and collapse where you're strong. Upload a whole book or coaching module — we find its chapters, you pick one, and get a 1–4 page note with the key maps and diagrams, as a lite PDF." />
+        sub="Topic notes expand where you're weak and collapse where you're strong. Upload a chapter or topic handout (up to 30 pages) — we find its sections, you pick one, and get a 1–4 page note with the key maps and diagrams, as a lite PDF." />
 
       <div className="grid gap-6 xl:grid-cols-[320px_1fr]">
         <div className="space-y-4">
           <Card sticker className="bg-saffron-soft">
             <div className="flex items-center gap-2 font-display font-bold"><FileUp size={18} /> Your material → notes</div>
-            <p className="mt-1 text-xs text-ink-2">PDF, JPG, PNG or HEIC · several files at once (e.g. photographed pages) · up to 50 MB / 300 pages. Multi-chapter files are fine. Private to you. Uses one upload-note allowance (Daily or Monthly Pass).</p>
+            <p className="mt-1 text-xs text-ink-2">One topic at a time: a PDF of up to 30 pages (max 15 MB), or up to 30 photographed pages (JPG, PNG or HEIC, 40 MB in total). Split a book into topics and upload just the one you need. Private to you. Uses one upload-note allowance (Daily or Monthly Pass).</p>
             <div className="mt-3"><MaterialPicker onPick={pickMaterial} disabled={!!status} /></div>
             <label className={cx("mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink/40 bg-surface px-3 py-4 text-sm font-semibold", status && "pointer-events-none opacity-50")}>
               {status ? "Working…" : "Upload new files (several OK)"}

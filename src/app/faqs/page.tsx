@@ -64,7 +64,7 @@ export default function Faqs() {
         <div className="space-y-2">
           <Q q="How are Mains answers evaluated?">Against a rubric keyed to the directive word: demand of the question, content depth, evidence, structure, conclusion and presentation. Marks are calculated from those scores by code, so they&apos;re consistent. You get strengths, improvements, missed dimensions and a model-answer outline. You can type answers or upload photos of handwritten pages.</Q>
           <Q q="Are the evaluation marks what UPSC would give?">They&apos;re indicative feedback to improve your writing, not a prediction of UPSC marks.</Q>
-          <Q q="What notes do you provide?">Cornell-style notes for syllabus topics that expand where you&apos;re weak, and notes from your own uploads: upload a whole book, pick a chapter, choose 1–4 pages, and download a light PDF that includes key maps and diagrams.</Q>
+          <Q q="What notes do you provide?">Cornell-style notes for syllabus topics that expand where you&apos;re weak, and notes from your own uploads: upload a chapter or topic handout (up to 30 pages), pick a section, choose 1–4 pages, and download a light PDF that includes key maps and diagrams.</Q>
           <Q q="Where does the current-affairs content come from?">From each day&apos;s newspaper, summarised in our own words for UPSC relevance, with static facts and exam angles. A daily quiz is built from the same stories.</Q>
         </div>
       </Section>
