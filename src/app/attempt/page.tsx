@@ -235,7 +235,7 @@ export default function AttemptPage() {
 
           {cur.stage === "PRELIMS" ? (
             <>
-              {cur.tail ? <p className="mt-4 text-[15px] font-semibold">{cur.tail}</p>
+              {cur.tail ? <p className="mt-4 whitespace-pre-line text-[15px] font-semibold">{cur.tail}</p>
                 : !!cur.statements?.length && cur.format !== "STATEMENT_I_II" && <p className="mt-4 text-sm font-semibold text-ink-2">Which of the above is/are correct?</p>}
               <div className="mt-3 grid gap-2">
                 {(cur.options ?? []).map((o, i) => (

@@ -28,24 +28,53 @@ type Analysis = {
 type Item = Question & { official_key: number; explanation?: string };
 
 const PAPER_LABEL: Record<string, string> = { PRE_GS1: "Prelims GS I", GS1: "Mains GS I", GS2: "Mains GS II", GS3: "Mains GS III", GS4: "Mains GS IV", PSIR_P1: "PSIR I", PSIR_P2: "PSIR II" };
+type Stage = "PRELIMS" | "MAINS";
+// Prelims is one paper whose questions span GS I–III syllabus areas; Mains filters by the paper itself.
+const AREAS: Record<Stage, { id: string; label: string; paper: string; prefix?: string }[]> = {
+  PRELIMS: [{ id: "ALL", label: "All GS", paper: "PRE_GS1" }, { id: "GS1", label: "GS I", paper: "PRE_GS1", prefix: "GS1" },
+    { id: "GS2", label: "GS II", paper: "PRE_GS1", prefix: "GS2" }, { id: "GS3", label: "GS III", paper: "PRE_GS1", prefix: "GS3" }],
+  MAINS: [{ id: "GS1", label: "GS I", paper: "GS1" }, { id: "GS2", label: "GS II", paper: "GS2" }, { id: "GS3", label: "GS III", paper: "GS3" },
+    { id: "GS4", label: "GS IV", paper: "GS4" }, { id: "PSIR_P1", label: "PSIR I", paper: "PSIR_P1" }, { id: "PSIR_P2", label: "PSIR II", paper: "PSIR_P2" }],
+};
 
 export default function PyqLab() {
   const session = useSession();
   const [tab, setTab] = useState<"browse" | "analysis" | "strategy">("browse");
-  const [paper, setPaper] = useState("PRE_GS1");
-  const [year, setYear] = useState<number>();
+  const [stage, setStage] = useState<Stage>("PRELIMS");
+  const [areaId, setAreaId] = useState("ALL");
+  const [year, setYear] = useState<number | "ALL">("ALL");
+  const [topic, setTopic] = useState<string>("");
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [launchState, setLaunch] = useState<LaunchState>({ kind: "idle" });
 
+  const area = AREAS[stage].find((a) => a.id === areaId) ?? AREAS[stage][0];
+  const paper = area.paper;
   const index = useAsync(() => content<Index>("pyq/index.json"), []);
   const cur = index.data?.papers.find((p) => p.paper === paper);
-  useEffect(() => { if (cur && (!year || !cur.years.includes(year))) setYear(cur.years[cur.years.length - 1]); }, [cur]); // eslint-disable-line
-  const items = useAsync(async () => (year ? content<{ items: Item[] }>(`pyq/${paper}/${year}.json`) : null), [paper, year]);
+  const years = useMemo(() => [...(cur?.years ?? [])].sort((a, b) => b - a), [cur]);
+  useEffect(() => { if (year !== "ALL" && cur && !cur.years.includes(year)) setYear("ALL"); }, [cur]); // eslint-disable-line
+  // all of a paper's years load together (a few hundred questions) so topics can be filtered across years
+  const items = useAsync(async () => {
+    if (!cur) return null;
+    const ys = year === "ALL" ? cur.years : [year];
+    const files = await Promise.all(ys.map((y) => content<{ items: Item[] }>(`pyq/${paper}/${y}.json`).catch(() => ({ items: [] as Item[] }))));
+    return files.flatMap((f) => f.items);
+  }, [paper, year, cur]);
   const analysis = useAsync(() => content<Analysis>(`analysis/${paper}.json`), [paper]);
   const names = useAsync(async () => {
-    const all = await Promise.all(["GS1", "GS2", "GS3", "GS4"].map((p) => content<{ nodes: SyllabusNode[] }>(`syllabus/${p}.json`).catch(() => ({ nodes: [] }))));
+    const all = await Promise.all(["GS1", "GS2", "GS3", "GS4", "PSIR"].map((p) => content<{ nodes: SyllabusNode[] }>(`syllabus/${p}.json`).catch(() => ({ nodes: [] }))));
     return Object.fromEntries(all.flatMap((a) => a.nodes.map((n) => [n.node_id, n.name])));
   }, []);
+
+  const inArea = useMemo(() => (items.data ?? []).filter((it) => !area.prefix || it.topic_ids.some((t) => t.startsWith(area.prefix!))), [items.data, area]);
+  const topicCounts = useMemo(() => {
+    const c = new Map<string, number>();
+    for (const it of inArea) { const t = it.topic_ids[0]; if (t) c.set(t, (c.get(t) ?? 0) + 1); }
+    return [...c.entries()].sort((a, b) => b[1] - a[1]);
+  }, [inArea]);
+  useEffect(() => { if (topic && !topicCounts.some(([t]) => t === topic)) setTopic(""); }, [topicCounts]); // eslint-disable-line
+  const shown = useMemo(() => [...(topic ? inArea.filter((it) => it.topic_ids.includes(topic)) : inArea)]
+    .sort((a, b) => (b.pyq_ref?.year ?? 0) - (a.pyq_ref?.year ?? 0) || (a.pyq_ref?.qno ?? 0) - (b.pyq_ref?.qno ?? 0)), [inArea, topic]);
 
   const heat = useMemo(() => {
     const hm = analysis.data?.heat_map ?? {};
@@ -56,88 +85,123 @@ export default function PyqLab() {
   if (!session) return null;
   const sample = cur?.sample_only;
   const noData = !analysis.data || analysis.data.no_data || analysis.data.sample_only || !analysis.data.n_items;
+  const topicName = (t: string) => names.data?.[t] ?? t;
+  const filters = topic ? [topic] : area.prefix ? [area.prefix] : undefined;
+  const label = [year === "ALL" ? "all years" : String(year), stage === "PRELIMS" ? `Prelims ${area.id === "ALL" ? "" : area.label}`.trim() : `Mains ${area.label}`,
+    topic ? topicName(topic) : ""].filter(Boolean).join(" · ");
+  function attempt() {
+    const body = year === "ALL"
+      ? { mode: filters ? "TOPIC" : "RANDOM", stage, paper, topic_ids: filters, n: stage === "PRELIMS" ? 25 : 10 }
+      : { mode: "YEAR", stage, paper, year, topic_ids: filters, n: 100 };
+    pyqTest(body, setLaunch);
+  }
 
   return (
     <AppShell guestPreview={{ emoji: "📜", title: "PYQ Lab", points: [
-      "Year-wise papers with answers to reveal", "Topic heat maps — what UPSC keeps asking",
-      "Option-pattern strategy with measured hit rates", "PYQ tests that skip questions you've already seen"] }}>
+      "Prelims and Mains papers by year, GS paper and topic", "Practise one topic across every year",
+      "Topic heat maps — what UPSC keeps asking", "PYQ tests that skip questions you've already seen"] }}>
       <PageHeader kicker="PYQ Lab" title="How UPSC actually asks"
-        sub="Browse previous-year papers, see which topics keep coming back, and learn option patterns — with their measured hit rates."
-        action={<div className="flex gap-2">
-          <Button variant="outline" onClick={() => pyqTest({ mode: "RANDOM", paper, n: 25, stage: paper === "PRE_GS1" ? "PRELIMS" : "MAINS" }, setLaunch)}>
-            Random unseen PYQs</Button>
-          <Button onClick={() => pyqTest({ mode: year ? "YEAR" : "RANDOM", paper, year, n: 100, stage: paper === "PRE_GS1" ? "PRELIMS" : "MAINS" }, setLaunch)}>
-            <Play size={16} /> Attempt {year ?? ""} paper</Button></div>} />
+        sub="Pick Prelims or Mains, then a year (or all years), a GS paper and a topic — browse the questions or attempt exactly that selection."
+        action={<Button onClick={attempt} disabled={!shown.length}><Play size={16} /> Attempt {shown.length ? `${year === "ALL" ? "" : `${shown.length} `}` : ""}PYQs</Button>} />
       <LaunchOverlay state={launchState} onClose={() => setLaunch({ kind: "idle" })} />
 
       {sample && (
         <div className="mb-5 rounded-2xl border-2 border-dashed border-saffron bg-saffron-soft p-3 text-sm">
-          <b>Sample data.</b> These are PYQ-format practice items, not official questions. Admins import real papers (with official keys) via the PYQ import API.
+          <b>Sample data.</b> These are PYQ-format practice items, not official questions.
         </div>
       )}
 
-      <div className="mb-5 flex flex-wrap items-center gap-3">
-        <Segmented value={tab} onChange={setTab} options={[{ value: "browse", label: "Browse" }, { value: "analysis", label: "Topic analysis" }, { value: "strategy", label: "Option strategy" }]} />
-        <select value={paper} onChange={(e) => setPaper(e.target.value)} className="rounded-2xl border-2 border-line bg-surface px-3 py-2 text-sm font-semibold">
-          {(index.data?.papers ?? []).map((p) => <option key={p.paper} value={p.paper}>{PAPER_LABEL[p.paper] ?? p.paper}</option>)}
-        </select>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <Segmented value={tab} onChange={setTab} options={[{ value: "browse", label: "Browse & attempt" }, { value: "analysis", label: "Topic analysis" }, { value: "strategy", label: "Option strategy" }]} />
+        <Segmented value={stage} onChange={(v: Stage) => { setStage(v); setAreaId(AREAS[v][0].id); setTopic(""); }}
+          options={[{ value: "PRELIMS", label: "Prelims" }, { value: "MAINS", label: "Mains" }]} />
       </div>
 
+      <Card className="mb-5 space-y-3 p-4">
+        <FilterRow label="Year">
+          <Pill on={year === "ALL"} onClick={() => setYear("ALL")}>All years</Pill>
+          {years.map((y) => <Pill key={y} mono on={y === year} onClick={() => setYear(y)}>{y}</Pill>)}
+        </FilterRow>
+        <FilterRow label="Paper">
+          {AREAS[stage].filter((a) => a.prefix || index.data?.papers.some((p) => p.paper === a.paper)).map((a) => (
+            <Pill key={a.id} on={a.id === area.id} onClick={() => { setAreaId(a.id); setTopic(""); }}>{a.label}</Pill>
+          ))}
+        </FilterRow>
+        <FilterRow label="Topic">
+          <Pill on={!topic} onClick={() => setTopic("")}>All topics · {inArea.length}</Pill>
+          {topicCounts.map(([t, n]) => <Pill key={t} on={t === topic} onClick={() => setTopic(t)}>{topicName(t)} · {n}</Pill>)}
+        </FilterRow>
+        <p className="text-xs text-muted">
+          {year === "ALL"
+            ? <>Attempt draws questions you haven&apos;t seen yet from <b>{label}</b>.</>
+            : <>Attempt replays <b>{label}</b> in the official order ({shown.length} question{shown.length === 1 ? "" : "s"}).</>}
+        </p>
+      </Card>
+
       {index.loading ? <Loading /> : index.error ? <ErrorBox error={index.error} /> : tab === "browse" ? (
-        <>
-          <div className="mb-4 flex flex-wrap gap-1.5">
-            {(cur?.years ?? []).map((y) => (
-              <button key={y} onClick={() => setYear(y)} className={cx("rounded-2xl border-2 px-3 py-1 font-mono text-sm font-bold",
-                y === year ? "border-ink bg-ink text-bg dark:border-primary dark:bg-primary" : "border-line")}>{y}</button>
-            ))}
-          </div>
-          {items.loading ? <Loading /> : (
-            <div className="space-y-4">
-              {(items.data?.items ?? []).map((it, i) => {
-                const open = revealed.has(it.qid);
-                return (
-                  <Card key={it.qid}>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-sm font-bold text-muted">Q{it.pyq_ref?.qno ?? i + 1}</span>
-                      <Chip tone="primary">{names.data?.[it.topic_ids[0]] ?? it.topic_ids[0]}</Chip>
-                      <Chip>{FORMAT_LABEL[it.format] ?? it.format}</Chip>
-                      {it.sample && <Chip tone="saffron">sample</Chip>}
+        items.loading ? <Loading /> : (
+          <div className="space-y-4">
+            {shown.map((it) => {
+              const open = revealed.has(it.qid);
+              return (
+                <Card key={it.qid}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-sm font-bold text-muted">{it.pyq_ref?.year} · Q{it.pyq_ref?.qno}</span>
+                    <Chip tone="primary">{topicName(it.topic_ids[0])}</Chip>
+                    {it.stage === "MAINS"
+                      ? (it.marks ? <Chip tone="green">{it.marks} marks{it.word_limit ? ` · ${it.word_limit} words` : ""}</Chip> : null)
+                      : <Chip>{FORMAT_LABEL[it.format] ?? it.format}</Chip>}
+                    {it.sample && <Chip tone="saffron">sample</Chip>}
+                  </div>
+                  <p className="mt-3 whitespace-pre-line font-semibold">{it.stem}</p>
+                  {!!it.statements?.length && <ol className="mt-2 space-y-1 text-sm text-ink-2">{it.statements.map((s, j) => <li key={j}>{it.format === "STATEMENT_I_II" || /^[IVX]+\.\s/.test(s) ? s : `${j + 1}. ${s}`}</li>)}</ol>}
+                  {it.tail && <p className="mt-2 whitespace-pre-line text-sm font-semibold">{it.tail}</p>}
+                  {!!it.options?.length && (
+                    <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
+                      {it.options.map((o, j) => (
+                        <div key={j} className={cx("rounded-xl border-2 px-3 py-1.5 text-sm", open && j === it.official_key ? "border-green bg-green-soft font-semibold" : "border-line")}>
+                          <span className="font-mono font-bold">{"abcd"[j]}.</span> {o}
+                        </div>
+                      ))}
                     </div>
-                    <p className="mt-3 font-semibold">{it.stem}</p>
-                    {!!it.statements?.length && <ol className="mt-2 space-y-1 text-sm text-ink-2">{it.statements.map((s, j) => <li key={j}>{it.format === "STATEMENT_I_II" || /^[IVX]+\.\s/.test(s) ? s : `${j + 1}. ${s}`}</li>)}</ol>}
-                    {it.tail && <p className="mt-2 text-sm font-semibold">{it.tail}</p>}
-                    {!!it.options?.length && (
-                      <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
-                        {it.options.map((o, j) => (
-                          <div key={j} className={cx("rounded-xl border-2 px-3 py-1.5 text-sm", open && j === it.official_key ? "border-green bg-green-soft font-semibold" : "border-line")}>
-                            <span className="font-mono font-bold">{"abcd"[j]}.</span> {o}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {open ? (it.explanation ? <p className="mt-3 rounded-2xl bg-surface-2 p-3 text-sm">{it.explanation}</p> : null) : (
-                      <button onClick={() => setRevealed(new Set([...revealed, it.qid]))} className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-primary">
-                        <Eye size={14} /> Reveal answer
-                      </button>
-                    )}
-                  </Card>
-                );
-              })}
-              {items.data?.items.length === 0 && <Empty title="No questions for this year" />}
-            </div>
-          )}
-        </>
+                  )}
+                  {!!it.options?.length && (open ? (it.explanation ? <p className="mt-3 rounded-2xl bg-surface-2 p-3 text-sm">{it.explanation}</p> : null) : (
+                    <button onClick={() => setRevealed(new Set([...revealed, it.qid]))} className="mt-3 inline-flex items-center gap-1 text-sm font-bold text-primary">
+                      <Eye size={14} /> Reveal answer
+                    </button>
+                  ))}
+                </Card>
+              );
+            })}
+            {!shown.length && <Empty title="No questions for this selection">Try another year, paper or topic.</Empty>}
+          </div>
+        )
       ) : analysis.loading ? <Loading /> : noData ? (
         <Empty icon="📭" title="No PYQ data for analysis yet">
           Analysis and strategy appear once official {PAPER_LABEL[paper] ?? paper} papers are uploaded by the TamGam team.
-          {sample && " The questions under Browse are practice samples and are not used for analysis."}
         </Empty>
       ) : tab === "analysis" ? (
-        <TopicAnalysis a={analysis.data!} name={(t) => names.data?.[t] ?? t} heat={heat} />
+        <TopicAnalysis a={analysis.data!} name={topicName} heat={heat} />
       ) : (
         <OptionStrategy a={analysis.data!} />
       )}
     </AppShell>
+  );
+}
+
+function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center gap-1.5">
+      <span className="w-14 shrink-0 text-xs font-bold uppercase tracking-wider text-muted">{label}</span>
+      <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
+
+function Pill({ on, mono, onClick, children }: { on: boolean; mono?: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className={cx("rounded-2xl border-2 px-3 py-1 text-sm font-semibold", mono && "font-mono",
+      on ? "border-ink bg-ink text-bg dark:border-primary dark:bg-primary" : "border-line hover:border-ink")}>{children}</button>
   );
 }
 
