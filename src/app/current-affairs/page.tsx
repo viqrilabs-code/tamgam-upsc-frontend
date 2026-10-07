@@ -6,7 +6,7 @@ import AppShell from "@/components/AppShell";
 import { Button, Card, Chip, Empty, ErrorBox, Loading, PageHeader, Segmented, cx } from "@/components/ui";
 import { content } from "@/lib/api";
 import { useAsync, useSearch, useSession } from "@/lib/hooks";
-import { fmtDate } from "@/lib/labels";
+import { fmtDate, gsPapers } from "@/lib/labels";
 import LaunchOverlay from "@/components/LaunchOverlay";
 import { type LaunchState, dailyQuiz } from "@/lib/tests";
 import type { CACard } from "@/lib/types";
@@ -33,7 +33,7 @@ export default function CurrentAffairs() {
   const shownDate = day.data?.date ?? date;
 
   if (!session) return null;
-  const arts = (day.data?.articles ?? []).filter((a) => gs === "ALL" || a.gs_tags.includes(gs));
+  const arts = (day.data?.articles ?? []).filter((a) => gs === "ALL" || gsPapers(a.gs_tags).includes(gs));
 
   return (
     <AppShell guestPreview={{ emoji: "📰", title: "The daily newspaper, distilled", points: [
@@ -73,7 +73,7 @@ export default function CurrentAffairs() {
               <Card key={a.id} sticker={i === 0} className={cx(i === 0 && "md:col-span-2")}>
                 <article id={a.id}>
                   <div className="flex flex-wrap items-center gap-1.5">
-                    {a.gs_tags.map((g) => <Chip key={g} tone="primary">{g}</Chip>)}
+                    {gsPapers(a.gs_tags).map((g) => <Chip key={g} tone="primary">{g}</Chip>)}
                     {a.demo && <Chip>demo card</Chip>}
                     {!!a.linked_pyq?.length && <Chip tone="saffron">PYQ theme: {a.linked_pyq.join(", ")}</Chip>}
                   {a.source && <Chip>{a.source}{a.page ? ` · p.${a.page}` : ""}</Chip>}

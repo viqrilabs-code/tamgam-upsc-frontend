@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { EyeOff, FileUp, Pencil } from "lucide-react";
 import { api, putSigned } from "@/lib/api";
 import { useAsync } from "@/lib/hooks";
-import { fmtDate, todayIST } from "@/lib/labels";
+import { fmtDate, todayIST, gsPapers } from "@/lib/labels";
 import { Button, Card, Chip, ErrorBox, Loading, Modal } from "../ui";
 
 type Paper = { _id: string; date: string; name: string; filename: string; status: string; progress: number; message?: string;
@@ -105,7 +105,7 @@ export default function AdminCurrentAffairs() {
             {articles.data?.items.map((a) => (
               <li key={a.id} className="flex items-start justify-between gap-3 py-3">
                 <div className="min-w-0">
-                  <div className="flex flex-wrap gap-1">{a.gs_tags.map((g) => <Chip key={g} tone="primary">{g}</Chip>)}
+                  <div className="flex flex-wrap gap-1">{gsPapers(a.gs_tags).map((g) => <Chip key={g} tone="primary">{g}</Chip>)}
                     {a.page && <Chip>p.{a.page}</Chip>}{a.status === "HIDDEN" && <Chip tone="danger">hidden</Chip>}</div>
                   <div className="mt-1 font-semibold">{a.headline}</div>
                   <div className="text-sm text-ink-2">{a.summary}</div>

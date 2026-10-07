@@ -8,7 +8,7 @@ import { TrendLine } from "@/components/charts";
 import { Button, Card, Chip, ErrorBox, Loading, Ring } from "@/components/ui";
 import { api, content } from "@/lib/api";
 import { useAsync, useEntitlements, useSession } from "@/lib/hooks";
-import { SCOPE_LABEL, fmtDate, greeting } from "@/lib/labels";
+import { SCOPE_LABEL, fmtDate, greeting, gsPapers } from "@/lib/labels";
 import LaunchOverlay from "@/components/LaunchOverlay";
 import { type LaunchState, bankTest, dailyQuiz, fullMainsMock, fullPrelimsMock, resultUrl } from "@/lib/tests";
 import type { Attempt, CACard } from "@/lib/types";
@@ -147,7 +147,7 @@ export default function Dashboard() {
             <ul className="mt-3 divide-y divide-line">
               {(ca.data?.articles ?? []).slice(0, 4).map((a) => (
                 <li key={a.id} className="py-3">
-                  <div className="flex flex-wrap gap-1">{a.gs_tags.map((g) => <Chip key={g} tone="primary">{g}</Chip>)}
+                  <div className="flex flex-wrap gap-1">{gsPapers(a.gs_tags).map((g) => <Chip key={g} tone="primary">{g}</Chip>)}
                     {a.demo && <Chip>demo</Chip>}</div>
                   <Link href={`/current-affairs/?date=${a.date}#${a.id}`} className="mt-1 block font-semibold hover:underline">{a.headline}</Link>
                 </li>

@@ -43,3 +43,13 @@ export function greeting() {
   const h = new Date().getHours();
   return h < 5 ? "Burning the midnight oil" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 }
+
+/** Paper-level GS tags ("GS1"…"GS4") from whatever an article carries — older cards hold syllabus ids like "GS2.POL.CON". */
+export function gsPapers(tags: string[] | undefined): string[] {
+  const out = new Set<string>();
+  for (const t of tags ?? []) {
+    const m = /^\s*GS\s*-?\s*([1-4])/i.exec(t);
+    if (m) out.add(`GS${m[1]}`);
+  }
+  return [...out].sort();
+}

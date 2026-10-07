@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Newspaper } from "lucide-react";
 import { content } from "@/lib/api";
+import { gsPapers } from "@/lib/labels";
 import type { CACard } from "@/lib/types";
 import { Chakra, Chip, cx } from "./ui";
 
@@ -70,7 +71,7 @@ export default function WaitingRoom({ title, message, progress, compact = false 
             )}
           </div>
           <div key={card.id} className="pop">
-            <div className="flex flex-wrap gap-1">{card.gs_tags.map((g) => <Chip key={g} tone="primary">{g}</Chip>)}</div>
+            <div className="flex flex-wrap gap-1">{gsPapers(card.gs_tags).map((g) => <Chip key={g} tone="primary">{g}</Chip>)}</div>
             <div className="mt-1.5 font-display font-bold leading-snug">{card.headline}</div>
             <p className="mt-1 line-clamp-4 text-sm text-ink-2">{card.summary}</p>
             {!!card.facts?.length && (
