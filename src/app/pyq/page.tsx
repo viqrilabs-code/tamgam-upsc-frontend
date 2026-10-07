@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Eye, Play } from "lucide-react";
+import { Eye, Lock, Play } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { HeatGrid } from "@/components/charts";
 import { Bar, Button, Card, Chip, Empty, ErrorBox, Loading, PageHeader, Segmented, cx } from "@/components/ui";
 import { content } from "@/lib/api";
-import { useAsync, useSession } from "@/lib/hooks";
+import { useAsync, useEntitlements, useSession } from "@/lib/hooks";
 import { FORMAT_LABEL } from "@/lib/labels";
 import LaunchOverlay from "@/components/LaunchOverlay";
 import { type LaunchState, pyqTest } from "@/lib/tests";
@@ -39,6 +39,8 @@ const AREAS: Record<Stage, { id: string; label: string; paper: string; prefix?: 
 
 export default function PyqLab() {
   const session = useSession();
+  const { ent } = useEntitlements(session);
+  const paying = !!ent && ent.plan !== "FREE";             // PYQ practice is free; analytics come with a pass
   const [tab, setTab] = useState<"browse" | "analysis" | "strategy">("browse");
   const [stage, setStage] = useState<Stage>("PRELIMS");
   const [areaId, setAreaId] = useState("ALL");
@@ -99,7 +101,7 @@ export default function PyqLab() {
   return (
     <AppShell guestPreview={{ emoji: "📜", title: "PYQ Lab", points: [
       "Prelims and Mains papers by year, GS paper and topic", "Practise one topic across every year",
-      "Topic heat maps — what UPSC keeps asking", "PYQ tests that skip questions you've already seen"] }}>
+      "Free for every signed-in student — no limit", "Topic heat maps and option strategy with a pass"] }}>
       <PageHeader kicker="PYQ Lab" title="How UPSC actually asks"
         sub="Pick Prelims or Mains, then a year (or all years), a GS paper and a topic — browse the questions or attempt exactly that selection."
         action={<Button onClick={attempt} disabled={!shown.length}><Play size={16} /> Attempt {shown.length ? `${year === "ALL" ? "" : `${shown.length} `}` : ""}PYQs</Button>} />
@@ -176,6 +178,14 @@ export default function PyqLab() {
             {!shown.length && <Empty title="No questions for this selection">Try another year, paper or topic.</Empty>}
           </div>
         )
+      ) : !paying ? (
+        <Card className="mx-auto max-w-xl text-center">
+          <Lock size={22} className="mx-auto text-primary" />
+          <h2 className="mt-2 font-display text-xl font-bold">{tab === "analysis" ? "Topic analysis" : "Option strategy"} comes with a pass</h2>
+          <p className="mt-2 text-sm text-ink-2">PYQ practice stays free with no limit. Heat maps of what UPSC keeps asking, topic trends and
+            option-pattern strategy (with measured hit rates) are part of the Daily and Monthly Pass.</p>
+          <a href="/plans/" className="sticker sticker-hover mt-4 inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-ink">Pick a plan</a>
+        </Card>
       ) : analysis.loading ? <Loading /> : noData ? (
         <Empty icon="📭" title="No PYQ data for analysis yet">
           Analysis and strategy appear once official {PAPER_LABEL[paper] ?? paper} papers are uploaded by the TamGam team.

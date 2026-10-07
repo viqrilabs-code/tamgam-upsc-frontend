@@ -87,7 +87,7 @@ export default function Plans() {
                     <td className="p-3">{label}</td>
                     {ORDER.map((id) => {
                       const v = data.plans[id]?.services?.[svc];
-                      const cap = id === "FREE" && ["prelims_test", "pyq_test"].includes(svc) ? ` · ${data.plans[id].caps?.sectional_max_questions} Qs/test`
+                      const cap = id === "FREE" && svc === "prelims_test" ? ` · ${data.plans[id].caps?.sectional_max_questions} Qs/test`
                         : id === "FREE" && svc === "prelims_mock" ? ` · ${data.plans[id].caps?.full_length_max_questions} Qs` : "";
                       return (
                         <td key={id} className="p-3 text-center">
