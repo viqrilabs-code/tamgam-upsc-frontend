@@ -65,9 +65,9 @@ export type Result = {
   topic_summary?: { strong: TopicRow[]; weak: TopicRow[] };
 };
 
-/** Rule-based (no AI) topic strengths: Prelims by accuracy, unevaluated Mains by coverage. */
+/** Rule-based (no AI) Prelims topic strengths and weak spots. */
 export type TopicRow = { topic_id: string; name: string; total?: number; attempted?: number; correct?: number;
-  accuracy?: number | null; questions?: number; answered?: number; full?: number };
+  accuracy?: number | null };
 
 export type Attempt = {
   attempt_id: string; test_id: string; scope: string; paper: string; stage: string; mode: string; status: string;

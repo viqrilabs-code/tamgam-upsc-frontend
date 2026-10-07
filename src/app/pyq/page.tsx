@@ -101,10 +101,10 @@ export default function PyqLab() {
   return (
     <AppShell guestPreview={{ emoji: "📜", title: "PYQ Lab", points: [
       "Prelims and Mains papers by year, GS paper and topic", "Practise one topic across every year",
-      "Free for every signed-in student — no limit", "Topic heat maps and option strategy with a pass"] }}>
+      "Prelims PYQs free for every signed-in student — no limit", "Mains PYQs with AI evaluation, heat maps and option strategy with a pass"] }}>
       <PageHeader kicker="PYQ Lab" title="How UPSC actually asks"
-        sub="Pick Prelims or Mains, then a year (or all years), a GS paper and a topic — browse the questions or attempt exactly that selection."
-        action={<Button onClick={attempt} disabled={!shown.length}><Play size={16} /> Attempt {shown.length ? `${year === "ALL" ? "" : `${shown.length} `}` : ""}PYQs</Button>} />
+        sub="Pick Prelims or Mains, then a year (or all years), a GS paper and a topic — browse the questions or attempt exactly that selection. Prelims PYQs are free; Mains PYQs (AI-evaluated) need a pass."
+        action={<Button onClick={attempt} disabled={!shown.length}>{stage === "MAINS" && !paying ? <Lock size={16} /> : <Play size={16} />} Attempt {shown.length ? `${year === "ALL" ? "" : `${shown.length} `}` : ""}PYQs{stage === "MAINS" && !paying ? " · needs a pass" : ""}</Button>} />
       <LaunchOverlay state={launchState} onClose={() => setLaunch({ kind: "idle" })} />
 
       {sample && (

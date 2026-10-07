@@ -91,7 +91,7 @@ export default function ResultPage() {
         </div>
       </div>
 
-      {r.topic_summary && <div className="mt-4"><TopicSummary s={r.topic_summary} stage="PRELIMS" /></div>}
+      {r.topic_summary && <div className="mt-4"><TopicSummary s={r.topic_summary} /></div>}
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <Card>
@@ -199,16 +199,16 @@ function ReportModal({ scope, item, onClose }: { scope: string; item: Explanatio
   );
 }
 
-function TopicSummary({ s, stage }: { s: NonNullable<Result["topic_summary"]>; stage: "PRELIMS" | "MAINS" }) {
-  const line = (t: TopicRow) => stage === "PRELIMS"
-    ? `${t.correct ?? 0}/${t.attempted ?? 0} correct${t.total && t.attempted !== t.total ? ` · ${(t.total ?? 0) - (t.attempted ?? 0)} skipped` : ""}`
-    : `${t.full ?? 0} of ${t.questions ?? 0} answered fully${t.answered !== t.questions ? ` · ${(t.questions ?? 0) - (t.answered ?? 0)} skipped` : ""}`;
+/** Rule-based strengths and weak spots from Prelims accuracy — no AI involved. */
+function TopicSummary({ s }: { s: NonNullable<Result["topic_summary"]> }) {
+  const line = (t: TopicRow) =>
+    `${t.correct ?? 0}/${t.attempted ?? 0} correct${t.total && t.attempted !== t.total ? ` · ${(t.total ?? 0) - (t.attempted ?? 0)} skipped` : ""}`;
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <Card>
         <h2 className="font-display text-lg font-bold text-green">Strong topics</h2>
         {s.strong.length ? <ul className="mt-2 space-y-1.5 text-sm">{s.strong.map((t) => <li key={t.topic_id}><b>{t.name}</b> <span className="text-muted">· {line(t)}</span></li>)}</ul>
-          : <p className="mt-2 text-sm text-muted">{stage === "PRELIMS" ? "No topic reached 70% on 2+ questions yet." : "No topic answered fully yet."}</p>}
+          : <p className="mt-2 text-sm text-muted">No topic reached 70% on 2+ questions yet.</p>}
       </Card>
       <Card>
         <h2 className="font-display text-lg font-bold text-saffron">Weak topics — revise these</h2>
@@ -221,7 +221,6 @@ function TopicSummary({ s, stage }: { s: NonNullable<Result["topic_summary"]>; s
 
 function MainsResult({ r }: { r: Result }) {
   const evaluating = r.status === "EVALUATING";
-  if (r.eval_mode === "none") return <MainsPractice r={r} />;
   return (
     <>
       <PageHeader kicker="Mains evaluation" title={r.title ?? "Your answers"}
@@ -281,32 +280,3 @@ function MainsResult({ r }: { r: Result }) {
   );
 }
 
-
-/** Free PYQ practice: no AI evaluation — topic coverage from word counts, and the answers as written. */
-function MainsPractice({ r }: { r: Result }) {
-  return (
-    <>
-      <PageHeader kicker="Mains PYQ practice" title={r.title ?? "Your answers"}
-        sub="Your answers are saved. On the free plan, PYQ answers aren't AI-evaluated — below is which topics you covered, judged by how fully you answered." />
-      <Card sticker className="mb-6 flex flex-wrap items-center justify-between gap-3 bg-primary-soft">
-        <p className="text-sm text-ink-2">Want marks out of 10/15, rubric scores and a model-answer outline for every answer?</p>
-        <Link href="/plans/" className="sticker sticker-hover inline-flex items-center gap-2 rounded-2xl bg-primary px-4 py-2 text-sm font-bold text-primary-ink">Get AI evaluation with a pass</Link>
-      </Card>
-      {r.topic_summary && <div className="mb-6"><TopicSummary s={r.topic_summary} stage="MAINS" /></div>}
-      <div className="space-y-4">
-        {(r.answers ?? []).map((a, i) => {
-          const words = (a.your_text ?? "").split(/\s+/).filter(Boolean).length;
-          return (
-            <Card key={a.qid}>
-              <p className="font-semibold"><span className="mr-2 font-mono text-muted">Q{i + 1}</span>{a.stem}</p>
-              <p className="mt-2 text-xs text-muted">
-                {!a.answered ? "Not answered" : words ? `${words} of ${a.word_limit ?? 150} words` : "Handwritten pages attached"}
-                {a.max_marks ? ` · ${a.max_marks} marks` : ""}</p>
-              {a.your_text && <p className="mt-2 line-clamp-4 whitespace-pre-line text-sm text-ink-2">{a.your_text}</p>}
-            </Card>
-          );
-        })}
-      </div>
-    </>
-  );
-}
