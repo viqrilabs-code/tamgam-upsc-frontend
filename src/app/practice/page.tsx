@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, FileUp, Play, ShieldCheck, XCircle } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import OwnMainsQuestions from "@/components/OwnMainsQuestions";
 import LaunchOverlay from "@/components/LaunchOverlay";
 import MaterialPicker, { type Material } from "@/components/MaterialPicker";
 import WaitingRoom from "@/components/WaitingRoom";
@@ -264,6 +265,9 @@ export default function Practice() {
           </div>
         </Card>
       </div>
+
+      <h2 className="mb-3 mt-10 font-display text-2xl font-extrabold">Your own question</h2>
+      <OwnMainsQuestions ent={ent ?? null} onState={setLaunch} />
     </AppShell>
   );
 }

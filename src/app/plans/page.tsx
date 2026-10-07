@@ -86,7 +86,11 @@ export default function Plans() {
                   <tr key={svc}>
                     <td className="p-3">{label}</td>
                     {ORDER.map((id) => {
-                      const v = data.plans[id]?.services?.[svc];
+                      const raw = data.plans[id]?.services ?? {};
+                      // own Mains questions = the plan's Mains mock allowance × 20 answers (derived, not stored)
+                      const v = svc === "custom_mains"
+                        ? (raw.mains_mock === undefined ? undefined : raw.mains_mock === -1 ? -1 : raw.mains_mock * 20)
+                        : raw[svc];
                       const cap = id === "FREE" && svc === "prelims_test" ? ` · ${data.plans[id].caps?.sectional_max_questions} Qs/test`
                         : id === "FREE" && svc === "prelims_mock" ? ` · ${data.plans[id].caps?.full_length_max_questions} Qs` : "";
                       return (

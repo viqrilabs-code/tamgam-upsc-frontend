@@ -16,7 +16,7 @@ export const FORMAT_LABEL: Record<string, string> = {
   DIRECT: "Direct", DESCRIPTIVE: "Descriptive", CASE_STUDY: "Case study",
 };
 
-export const BUCKET_LABEL: Record<string, string> = { PYQ: "PYQ", NEW: "Fresh", CA: "Current affairs", RANDOM: "Wildcard" };
+export const BUCKET_LABEL: Record<string, string> = { PYQ: "PYQ", NEW: "Fresh", CA: "Current affairs", RANDOM: "Wildcard", CUSTOM: "Your question" };
 
 export const DIM_LABEL: Record<string, string> = {
   demand: "Demand of question", content: "Content depth", evidence: "Evidence", structure: "Structure",
