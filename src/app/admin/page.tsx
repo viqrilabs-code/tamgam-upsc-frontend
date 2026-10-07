@@ -145,19 +145,51 @@ function AdminQuality() {
   const [msg, setMsg] = useState("");
   const [err, setErr] = useState<unknown>();
 
+  const [busy, setBusy] = useState<Record<string, "approve" | "retire">>({});
+  const [done, setDone] = useState<Set<string>>(new Set());
+  const [confirmAll, setConfirmAll] = useState(false);
+  const [allBusy, setAllBusy] = useState(false);
+  const pending = (queue.data?.items ?? []).filter((q) => !done.has(q._id));
+
   async function review(qid: string, action: "approve" | "retire") {
-    try { await api(`/api/v1/platform/admin/questions/${qid}/review`, { method: "POST", json: { action } }); queue.reload(); }
-    catch (e) { setErr(e); }
+    if (busy[qid]) return;                                   // one request per click — no repeats
+    setErr(undefined); setBusy((b) => ({ ...b, [qid]: action }));
+    try {
+      await api(`/api/v1/platform/admin/questions/${qid}/review`, { method: "POST", json: { action } });
+      setDone((d) => new Set(d).add(qid));                   // leaves the list at once; pools refresh in the background
+      setMsg(action === "approve" ? "Approved — it's in the question bank" : "Retired");
+    } catch (e) { setErr(e); }
+    finally { setBusy((b) => { const n = { ...b }; delete n[qid]; return n; }); }
+  }
+
+  async function approveAll() {
+    setErr(undefined); setAllBusy(true);
+    try {
+      const r = await api<{ approved: number; papers: string[] }>("/api/v1/platform/admin/review-queue/approve-all", { method: "POST", json: {} });
+      setMsg(`Approved ${r.approved} question${r.approved === 1 ? "" : "s"}${r.papers.length ? ` (${r.papers.join(", ")})` : ""} — tests pick them up within a minute`);
+      setDone(new Set()); setConfirmAll(false); queue.reload();
+    } catch (e) { setErr(e); }
+    finally { setAllBusy(false); }
   }
   return (
     <div className="space-y-6">
       {err ? <ErrorBox error={err} /> : null}
       <div>
-        <h2 className="mb-3 font-display text-xl font-bold">Review queue</h2>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <h2 className="font-display text-xl font-bold">Review queue</h2>
+          {pending.length > 0 && (confirmAll ? (
+            <span className="ml-auto inline-flex flex-wrap items-center gap-2 text-sm">
+              Approve every question waiting for review?
+              <Button variant="outline" className="!py-1.5" onClick={() => setConfirmAll(false)} disabled={allBusy}>Cancel</Button>
+              <Button className="!py-1.5" onClick={approveAll} loading={allBusy}>Yes, approve all</Button>
+            </span>
+          ) : <Button className="ml-auto !py-1.5" onClick={() => setConfirmAll(true)}>Approve all</Button>)}
+        </div>
         <p className="mb-3 text-sm text-muted">Generated questions where the critic disagreed, guardrail models were unavailable, or 3+ users reported a problem.</p>
-        {queue.loading ? <Loading /> : queue.data?.items.length === 0 ? <Empty title="Queue is clear ✨" /> : (
+        {msg && <p className="mb-3 text-sm font-semibold text-green">{msg} ✓</p>}
+        {queue.loading ? <Loading /> : pending.length === 0 ? <Empty title="Queue is clear ✨" /> : (
           <div className="space-y-4">
-            {queue.data?.items.map((q) => (
+            {pending.map((q) => (
               <Card key={q._id}>
                 <div className="flex flex-wrap gap-2">
                   <Chip tone="primary">{q.paper}</Chip><Chip>{q.topic_ids[0]}</Chip><Chip>{FORMAT_LABEL[q.format] ?? q.format}</Chip><Chip tone="saffron">{q.bucket}</Chip>
@@ -172,8 +204,10 @@ function AdminQuality() {
                 </ul>
                 <p className="mt-2 text-xs text-muted">Critic: {q.validation?.critic_answer ?? "—"} ({q.validation?.critic_score ?? "—"}) · Guardrail notes: {(q.guardrails?.issues ?? []).join("; ") || "—"} · Claims: {(q.validation?.fact_flags ?? []).join("; ") || "—"}</p>
                 <div className="mt-3 flex gap-2">
-                  <Button className="!py-1.5" onClick={() => review(q._id, "approve")}>Approve</Button>
-                  <Button variant="outline" className="!py-1.5" onClick={() => review(q._id, "retire")}>Retire</Button>
+                  <Button className="!py-1.5" onClick={() => review(q._id, "approve")} disabled={!!busy[q._id]} loading={busy[q._id] === "approve"}>
+                    {busy[q._id] === "approve" ? "Approving…" : "Approve"}</Button>
+                  <Button variant="outline" className="!py-1.5" onClick={() => review(q._id, "retire")} disabled={!!busy[q._id]} loading={busy[q._id] === "retire"}>
+                    {busy[q._id] === "retire" ? "Retiring…" : "Retire"}</Button>
                 </div>
               </Card>
             ))}
@@ -193,7 +227,6 @@ function AdminQuality() {
             </Card>
           ))}
         </div>
-        {msg && <p className="mt-2 text-sm font-semibold text-green">{msg} ✓</p>}
       </div>
       <div>
         <h2 className="mb-3 font-display text-xl font-bold">Test mix (config/test_mix)</h2>
