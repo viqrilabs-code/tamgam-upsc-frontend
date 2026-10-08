@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   BarChart3, CalendarDays, Crown, History, LayoutGrid, LifeBuoy, LogOut, Moon, NotebookPen,
-  ScrollText, Shield, Sun, Target, UserRound,
+  ScrollText, Shield, Sun, Target, UserRound, BookOpenCheck,
 } from "lucide-react";
 import { GuestPreview, SignInGate, UpgradeGate } from "./Gates";
 import LiveTests from "./LiveTests";
@@ -19,6 +19,7 @@ const NAV = [
   { href: "/current-affairs/", label: "Current Affairs", icon: CalendarDays },
   { href: "/pyq/", label: "PYQ Lab", icon: ScrollText },
   { href: "/notes/", label: "Notes", icon: NotebookPen },
+  { href: "/revision/", label: "Revision", icon: BookOpenCheck },
   { href: "/analytics/", label: "Analytics", icon: BarChart3 },
   { href: "/history/", label: "History", icon: History },
 ];
