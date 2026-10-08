@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeIndianRupee, BookOpen, BookOpenCheck, CreditCard, KeyRound, LayoutGrid, MessageSquareWarning, Newspaper, ShieldCheck, UserCog, Users } from "lucide-react";
+import { BadgeIndianRupee, BookOpen, BookOpenCheck, CreditCard, KeyRound, LayoutGrid, MessageSquareWarning, Newspaper, Eye, ShieldCheck, UserCog, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AdminAdmins, { type AdminRow } from "@/components/admin/AdminAdmins";
 import AdminComplaints from "@/components/admin/AdminComplaints";
@@ -11,14 +11,15 @@ import AdminPlans from "@/components/admin/AdminPlans";
 import AdminRevision from "@/components/admin/AdminRevision";
 import AdminSources from "@/components/admin/AdminSources";
 import AdminUsers from "@/components/admin/AdminUsers";
+import AdminVisitors from "@/components/admin/AdminVisitors";
 import { Button, Card, Chip, Empty, ErrorBox, Loading, PageHeader, cx } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useAsync, useSession } from "@/lib/hooks";
 import { FORMAT_LABEL, fmtDate } from "@/lib/labels";
 
-type Tab = "overview" | "users" | "admins" | "plans" | "payments" | "complaints" | "sources" | "ca" | "revision" | "quality";
+type Tab = "overview" | "visitors" | "users" | "admins" | "plans" | "payments" | "complaints" | "sources" | "ca" | "revision" | "quality";
 const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
-  { id: "overview", label: "Overview", icon: LayoutGrid }, { id: "users", label: "Users", icon: Users }, { id: "admins", label: "Admins", icon: UserCog },
+  { id: "overview", label: "Overview", icon: LayoutGrid }, { id: "visitors", label: "Visitors", icon: Eye }, { id: "users", label: "Users", icon: Users }, { id: "admins", label: "Admins", icon: UserCog },
   { id: "plans", label: "Plans & pricing", icon: BadgeIndianRupee }, { id: "payments", label: "Payments", icon: CreditCard }, { id: "complaints", label: "Complaints", icon: MessageSquareWarning },
   { id: "sources", label: "Sources (GS & optional)", icon: BookOpen }, { id: "ca", label: "Current affairs", icon: Newspaper }, { id: "revision", label: "Revision", icon: BookOpenCheck },
   { id: "quality", label: "Question bank", icon: ShieldCheck },
@@ -53,6 +54,7 @@ export default function Admin() {
         ))}
       </div>
       {tab === "overview" && <AdminOverview go={setTab} />}
+      {tab === "visitors" && <AdminVisitors />}
       {tab === "users" && <AdminUsers />}
       {tab === "admins" && <AdminAdmins />}
       {tab === "plans" && <AdminPlans />}

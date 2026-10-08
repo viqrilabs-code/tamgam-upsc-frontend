@@ -80,3 +80,14 @@ export function useTheme() {
   };
   return { dark, toggle };
 }
+
+/** True while the page is visible — background tabs shouldn't poll the server. */
+export function usePageVisible(): boolean {
+  const [visible, setVisible] = useState(typeof document === "undefined" || document.visibilityState !== "hidden");
+  useEffect(() => {
+    const on = () => setVisible(document.visibilityState !== "hidden");
+    document.addEventListener("visibilitychange", on);
+    return () => document.removeEventListener("visibilitychange", on);
+  }, []);
+  return visible;
+}

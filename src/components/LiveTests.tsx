@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Hourglass, PauseCircle, Play, Radio, X } from "lucide-react";
 import { api, getSession } from "@/lib/api";
+import { usePageVisible } from "@/lib/hooks";
 import { SCOPE_LABEL, fmtDuration } from "@/lib/labels";
 import { attemptUrl } from "@/lib/tests";
 import { cx } from "./ui";
@@ -38,12 +39,17 @@ export default function LiveTests() {
     } catch { /* offline or signed out: keep the last state */ }
   }, []);
 
+  const visible = usePageVisible();
+  // Poll only while the tab is visible: every 5 s while a test is being built, every 60 s while one is running
+  // (the countdown ticks locally), otherwise every 5 min — plus a check on each page change and on return to the tab.
+  const every = active.jobs.length ? 5_000 : active.tests.length ? 60_000 : 300_000;
   useEffect(() => {
+    if (!visible) return;
     load();
-    const poll = setInterval(load, active.jobs.length ? 5000 : 20000);
-    const clock = setInterval(() => tick((x) => x + 1), 1000);
-    return () => { clearInterval(poll); clearInterval(clock); };
-  }, [load, active.jobs.length, path]);
+    const poll = setInterval(load, every);
+    const clock = active.tests.length ? setInterval(() => tick((x) => x + 1), 1000) : undefined;
+    return () => { clearInterval(poll); if (clock) clearInterval(clock); };
+  }, [load, every, active.tests.length, path, visible]);
 
   if (path?.startsWith("/attempt")) return null;      // already inside a test
   const count = active.tests.length + active.jobs.length;

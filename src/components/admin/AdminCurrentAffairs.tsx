@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { EyeOff, FileUp, Pencil } from "lucide-react";
 import { api, putSigned } from "@/lib/api";
-import { useAsync } from "@/lib/hooks";
+import { useAsync, usePageVisible } from "@/lib/hooks";
 import { fmtDate, todayIST, gsPapers } from "@/lib/labels";
 import { Button, Card, Chip, ErrorBox, Loading, Modal } from "../ui";
 
@@ -25,11 +25,12 @@ export default function AdminCurrentAffairs() {
   const [edit, setEdit] = useState<Article | null>(null);
 
   const processing = papers.data?.items.some((p) => ["QUEUED", "PROCESSING"].includes(p.status));
+  const visible = usePageVisible();
   useEffect(() => {
-    if (!processing) return;
-    const t = setInterval(() => { papers.reload(); articles.reload(); }, 3000);
+    if (!processing || !visible) return;                   // background tabs don't poll
+    const t = setInterval(() => { papers.reload(); articles.reload(); }, 5000);
     return () => clearInterval(t);
-  }, [processing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [processing, visible]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function upload(e: React.FormEvent) {
     e.preventDefault();
