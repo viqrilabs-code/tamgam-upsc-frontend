@@ -12,7 +12,7 @@ export const WHATSAPP_LINK = "https://wa.me/919270211542";
 export const LAST_UPDATED = "2 October 2026";
 
 export const FOOTER_LINKS = [
-  ["About", "/about/"], ["Careers", "/careers/"], ["Contact", "/contact/"], ["FAQs", "/faqs/"],
+  ["Geopolitics blog", "/geopolitics/"], ["About", "/about/"], ["Careers", "/careers/"], ["Contact", "/contact/"], ["FAQs", "/faqs/"],
   ["Privacy", "/privacy/"], ["Terms", "/terms/"], ["Refunds", "/refunds/"], ["Licenses", "/licenses/"],
 ] as const;
 

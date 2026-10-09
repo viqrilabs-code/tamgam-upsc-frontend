@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeIndianRupee, BookOpen, BookOpenCheck, CreditCard, KeyRound, LayoutGrid, MessageSquareWarning, Newspaper, Eye, ShieldCheck, UserCog, Users } from "lucide-react";
+import { BadgeIndianRupee, BookOpen, BookOpenCheck, CreditCard, KeyRound, LayoutGrid, MessageSquareWarning, Newspaper, Eye, Globe2, ShieldCheck, UserCog, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import AdminAdmins, { type AdminRow } from "@/components/admin/AdminAdmins";
+import AdminBlog from "@/components/admin/AdminBlog";
 import AdminComplaints from "@/components/admin/AdminComplaints";
 import AdminCurrentAffairs from "@/components/admin/AdminCurrentAffairs";
 import AdminPayments from "@/components/admin/AdminPayments";
@@ -17,11 +18,12 @@ import { api } from "@/lib/api";
 import { useAsync, useSession } from "@/lib/hooks";
 import { FORMAT_LABEL, fmtDate } from "@/lib/labels";
 
-type Tab = "overview" | "visitors" | "users" | "admins" | "plans" | "payments" | "complaints" | "sources" | "ca" | "revision" | "quality";
+type Tab = "overview" | "visitors" | "users" | "admins" | "plans" | "payments" | "complaints" | "sources" | "ca" | "revision" | "blog" | "quality";
 const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
   { id: "overview", label: "Overview", icon: LayoutGrid }, { id: "visitors", label: "Visitors", icon: Eye }, { id: "users", label: "Users", icon: Users }, { id: "admins", label: "Admins", icon: UserCog },
   { id: "plans", label: "Plans & pricing", icon: BadgeIndianRupee }, { id: "payments", label: "Payments", icon: CreditCard }, { id: "complaints", label: "Complaints", icon: MessageSquareWarning },
   { id: "sources", label: "Sources (GS & optional)", icon: BookOpen }, { id: "ca", label: "Current affairs", icon: Newspaper }, { id: "revision", label: "Revision", icon: BookOpenCheck },
+  { id: "blog", label: "Geopolitics blog", icon: Globe2 },
   { id: "quality", label: "Question bank", icon: ShieldCheck },
 ];
 
@@ -63,6 +65,7 @@ export default function Admin() {
       {tab === "sources" && <AdminSources />}
       {tab === "ca" && <AdminCurrentAffairs />}
       {tab === "revision" && <AdminRevision />}
+      {tab === "blog" && <AdminBlog />}
       {tab === "quality" && <AdminQuality />}
     </AppShell>
   );
