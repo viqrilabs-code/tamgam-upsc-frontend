@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Eye, EyeOff, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Copy, ExternalLink, Eye, EyeOff, Pencil, Plus, Trash2, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAsync } from "@/lib/hooks";
 import { fmtDate } from "@/lib/labels";
 import { Button, Card, Chip, Empty, ErrorBox, Loading } from "../ui";
 
 type Source = { url: string; title: string };
-type Row = { id: string; title: string; status: "DRAFT" | "PUBLISHED"; updated_at?: string; published_at?: string; sources: number };
+type Row = { id: string; slug: string; url: string; title: string; status: "DRAFT" | "PUBLISHED"; updated_at?: string; published_at?: string; sources: number };
 type Draft = { title: string; summary: string; body: string; conclusion: string; sources: Source[] };
 const EMPTY: Draft = { title: "", summary: "", body: "", conclusion: "", sources: [{ url: "", title: "" }] };
 const field = "w-full rounded-2xl border-2 border-line bg-bg px-3 py-2 text-sm outline-none focus:border-primary";
@@ -22,6 +22,7 @@ export default function AdminBlog() {
   const [confirmDel, setConfirmDel] = useState<string>();
   const [err, setErr] = useState<unknown>();
   const [msg, setMsg] = useState("");
+  const [copied, setCopied] = useState<string>();
 
   async function edit(id: string | "new") {
     setErr(undefined); setMsg("");
@@ -39,7 +40,7 @@ export default function AdminBlog() {
       const body = { ...d, sources: d.sources.filter((s) => s.url.trim()), ...(publish === null ? {} : { publish }) };
       const out = await api<Row>(editing === "new" ? "/api/v1/blog/admin/posts" : `/api/v1/blog/admin/posts/${editing}`,
         { method: editing === "new" ? "POST" : "PUT", json: body });
-      setMsg(out.status === "PUBLISHED" ? `Published “${out.title}” — it's live on /geopolitics` : `Saved “${out.title}” as a draft`);
+      setMsg(out.status === "PUBLISHED" ? `Published “${out.title}” — share it: ${out.url}` : `Saved “${out.title}” as a draft`);
       setEditing(null); list.reload();
     } catch (e) { setErr(e); } finally { setBusy(false); }
   }
@@ -114,7 +115,14 @@ export default function AdminBlog() {
             <tbody className="divide-y divide-line">
               {list.data.items.map((r) => (
                 <tr key={r.id}>
-                  <td className="p-3 font-semibold">{r.title}{r.published_at && <div className="text-xs font-normal text-muted">published {fmtDate(r.published_at)}</div>}</td>
+                  <td className="p-3 font-semibold">{r.title}{r.published_at && <div className="text-xs font-normal text-muted">published {fmtDate(r.published_at)}</div>}
+                    {r.status === "PUBLISHED" && (
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs font-normal">
+                        <a href={r.url} target="_blank" rel="noopener noreferrer" className="break-all text-primary hover:underline">{r.url}</a>
+                        <button onClick={async () => { try { await navigator.clipboard.writeText(r.url); setCopied(r.id); } catch { /* blocked */ } }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-line px-1.5 py-0.5 text-ink-2 hover:border-primary">
+                          <Copy size={11} /> {copied === r.id ? "copied ✓" : "copy link"}</button>
+                      </div>)}</td>
                   <td className="p-3">{r.status === "PUBLISHED" ? <Chip tone="green">published</Chip> : <Chip tone="saffron">draft</Chip>}</td>
                   <td className="p-3 font-mono">{r.sources}</td>
                   <td className="p-3 text-ink-2">{fmtDate(r.updated_at)}</td>

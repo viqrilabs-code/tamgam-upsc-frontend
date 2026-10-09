@@ -6,6 +6,20 @@
     "trailingSlash": true,
     "rewrites": [
       {
+        "source": "/geopolitics/*/",
+        "run": {
+          "serviceId": "tamgam-api",
+          "region": "asia-south1"
+        }
+      },
+      {
+        "source": "/geopolitics/*",
+        "run": {
+          "serviceId": "tamgam-api",
+          "region": "asia-south1"
+        }
+      },
+      {
         "source": "/api/**",
         "run": {
           "serviceId": "tamgam-api",
