@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, CircleSlash, RotateCcw, XCircle } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import FreeMixNote from "@/components/FreeMixNote";
 import WaitingRoom from "@/components/WaitingRoom";
 import { Bar, Button, Card, Chip, ErrorBox, Loading, Modal, PageHeader, Ring, Segmented, cx } from "@/components/ui";
 import { api, sleep } from "@/lib/api";
-import { useSearch, useSession } from "@/lib/hooks";
+import { useEntitlements, useSearch, useSession } from "@/lib/hooks";
 import { BUCKET_LABEL, DIM_LABEL, FORMAT_LABEL, fmtDate } from "@/lib/labels";
 import type { Explanation, Result, TopicRow } from "@/lib/types";
 
@@ -29,6 +30,7 @@ export default function ResultPage() {
   const [err, setErr] = useState<unknown>();
   const [filter, setFilter] = useState<"all" | "wrong" | "correct" | "skipped">("all");
   const [report, setReport] = useState<Explanation | null>(null);
+  const { ent } = useEntitlements(session);
 
   useEffect(() => {
     if (!scope || !attempt) return;
@@ -61,6 +63,7 @@ export default function ResultPage() {
     <AppShell>
       <PageHeader kicker={fmtDate(r.submitted_at)} title={r.title ?? "Result"}
         action={<Link href="/practice/" className="inline-flex items-center gap-2 text-sm font-bold text-primary"><RotateCcw size={14} /> New test</Link>} />
+      {ent?.plan === "FREE" && <FreeMixNote className="mb-4" />}
 
       <div className="grid gap-4 md:grid-cols-[auto_1fr]">
         <Card sticker className="flex items-center gap-6">

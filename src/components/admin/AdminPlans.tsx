@@ -51,7 +51,7 @@ function PlanEditor({ id, plan, services, onSaved }: { id: string; plan: Plan; s
   const [days, setDays] = useState(String(plan.days || ""));
   const [tagline, setTagline] = useState(plan.tagline ?? "");
   const [limits, setLimits] = useState<Record<string, string>>({});
-  const [caps, setCaps] = useState({ s: String(plan.caps?.sectional_max_questions ?? ""), f: String(plan.caps?.full_length_max_questions ?? "") });
+  const [caps, setCaps] = useState({ s: String(plan.caps?.sectional_max_questions ?? "") });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string>();
   const [err, setErr] = useState<unknown>();
@@ -71,7 +71,7 @@ function PlanEditor({ id, plan, services, onSaved }: { id: string; plan: Plan; s
       await api(`/api/v1/platform/admin/plans/${id}`, { method: "PUT", json: {
         price_paise: Math.round(parseFloat(price || "0") * 100), tagline, services: svc,
         ...(id !== "FREE" && days ? { days: parseInt(days, 10) } : {}),
-        ...(id === "FREE" ? { caps: { sectional_max_questions: parseInt(caps.s, 10) || 5, full_length_max_questions: parseInt(caps.f, 10) || 10 } } : {}),
+        ...(id === "FREE" ? { caps: { sectional_max_questions: parseInt(caps.s, 10) || 5 } } : {}),
       } });
       setMsg("Saved ✓");
       onSaved();
@@ -96,7 +96,7 @@ function PlanEditor({ id, plan, services, onSaved }: { id: string; plan: Plan; s
       {id === "FREE" && (
         <div className="grid grid-cols-2 gap-2">
           <label className="text-xs font-semibold">Max Qs / sectional test<input className={field} type="number" min={1} max={50} value={caps.s} onChange={(e) => setCaps({ ...caps, s: e.target.value })} /></label>
-          <label className="text-xs font-semibold">Max Qs / full-length<input className={field} type="number" min={1} max={100} value={caps.f} onChange={(e) => setCaps({ ...caps, f: e.target.value })} /></label>
+          <p className="self-end text-xs text-muted">Full mocks are always the 100-question paper — on Free, a mix of PYQs and the question bank, never new AI questions.</p>
         </div>
       )}
       <div>

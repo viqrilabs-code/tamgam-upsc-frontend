@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, FileUp, Play, ShieldCheck, XCircle } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import FreeMixNote from "@/components/FreeMixNote";
 import OwnMainsQuestions from "@/components/OwnMainsQuestions";
 import LaunchOverlay from "@/components/LaunchOverlay";
 import MaterialPicker, { type Material } from "@/components/MaterialPicker";
@@ -248,11 +249,12 @@ export default function Practice() {
         <Card sticker className="flex flex-col justify-between gap-4 bg-primary-soft">
           <div>
             <div className="font-display text-xl font-extrabold">Prelims · GS Paper I</div>
-            <p className="text-sm text-ink-2">{ent?.caps.full_length_max_questions
-              ? `Free plan: a ${ent.caps.full_length_max_questions}-question timed mock. Daily and Monthly Passes get the real paper: 100 questions, 200 marks, 2 hours, −⅓ negative marking.`
+            <p className="text-sm text-ink-2">{ent?.plan === "FREE"
+              ? "The full paper, free: 100 questions, 200 marks, 2 hours, −⅓ negative marking — a mix of real UPSC PYQs and our question bank."
               : "Exactly like the real paper: 100 questions, 200 marks, 2 hours, −⅓ negative marking. Sized across GS I–IV by PYQ weight."}</p>
+            {ent?.plan === "FREE" && <FreeMixNote className="mt-3" />}
           </div>
-          <Button variant="lime" onClick={() => fullPrelimsMock(setLaunch)}>Start {ent?.caps.full_length_max_questions ?? 100}-question mock 🔥</Button>
+          <Button variant="lime" onClick={() => fullPrelimsMock(setLaunch)}>Start 100-question mock 🔥</Button>
         </Card>
         <Card sticker className="flex flex-col justify-between gap-4">
           <div>

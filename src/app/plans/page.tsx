@@ -92,7 +92,7 @@ export default function Plans() {
                         ? (raw.mains_mock === undefined ? undefined : raw.mains_mock === -1 ? -1 : raw.mains_mock * 20)
                         : raw[svc];
                       const cap = id === "FREE" && svc === "prelims_test" ? ` · ${data.plans[id].caps?.sectional_max_questions} Qs/test`
-                        : id === "FREE" && svc === "prelims_mock" ? ` · ${data.plans[id].caps?.full_length_max_questions} Qs` : "";
+                        : id === "FREE" && svc === "prelims_mock" ? " · 100 Qs, PYQs + question bank" : "";
                       return (
                         <td key={id} className="p-3 text-center">
                           {v === undefined ? <Minus size={16} className="mx-auto text-muted" />

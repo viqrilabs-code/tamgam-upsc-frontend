@@ -38,7 +38,7 @@ export default function Faqs() {
 
       <Section title="Plans and payments">
         <div className="space-y-2">
-          <Q q="What does the Free plan include?">Prelims practice tests (5 questions per sectional test) and a 10-question full-length mock, as often as you like. It&apos;s the best way to try TamGam before paying.</Q>
+          <Q q="What does the Free plan include?">Prelims practice tests (5 questions per sectional test) and the full 100-question Prelims mock — a mix of real UPSC PYQs and our question bank — as often as you like. Paid plans add questions that adapt to your preparation level. It&apos;s the best way to try TamGam before paying.</Q>
           <Q q="What do the member passes include?">
             <p><b>{p.DAILY_PASS?.name ?? "Daily Pass"}</b> ({inr(p.DAILY_PASS?.price_paise)} for 24 hours): every service once, plus unlimited current affairs, with your history and analytics saved to your number.</p>
             <p><b>{p.MONTHLY_PASS?.name ?? "Monthly Pass"}</b> ({inr(p.MONTHLY_PASS?.price_paise)} for 30 days): generous fair-use allowances for every service (e.g. 60 Prelims tests, 10 full mocks, 20 Mains practices, 4 full Mains mocks, 20 notes from uploads) plus unlimited current affairs and full analytics. See the full table on the <Link className="text-primary" href="/plans/">Plans</Link> page.</p>
@@ -56,7 +56,7 @@ export default function Faqs() {
           <Q q="Who writes the questions? Are AI questions reliable?">Our bank mixes human-written questions, previous-year questions and AI-written questions. Each AI question is answered blind by a second AI, screened for safety and checked against UPSC standards; anything uncertain goes to a human reviewer. If you spot a mistake, tap <i>Report</i> — three independent reports pull a question until it&apos;s reviewed.</Q>
           <Q q="How does negative marking work?">Exactly like Prelims: +2 for a correct answer, −0.66 for a wrong one, 0 if skipped.</Q>
           <Q q="Can I practise from my own notes?">Yes, on a pass. Upload your notes or a chapter for a topic. We check it&apos;s really about that topic, then write questions only from it. Those questions stay private to you.</Q>
-          <Q q="Is there a full-length mock?">Yes. Prelims: 100 questions in 2 hours (10 questions on the Free plan). Mains: a full 250-mark paper in 3 hours, with evaluation.</Q>
+          <Q q="Is there a full-length mock?">Yes. Prelims: 100 questions in 2 hours (on every plan, including Free). Mains: a full 250-mark paper in 3 hours, with evaluation.</Q>
         </div>
       </Section>
 

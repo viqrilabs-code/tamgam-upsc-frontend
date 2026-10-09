@@ -16,7 +16,7 @@ export default function Refunds() {
         </p>
         <p className="mt-2">
           To evaluate TamGam before paying, use the <Link className="font-semibold text-primary" href="/plans/">Free plan</Link>: Prelims tests
-          (5 questions each) and a 10-question full-length mock, free, for as long as you like.
+          (5 questions each) and the full 100-question Prelims mock, free, for as long as you like.
         </p>
       </div>
 

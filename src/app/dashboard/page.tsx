@@ -111,7 +111,7 @@ export default function Dashboard() {
           className="sticker sticker-hover rounded-3xl bg-primary p-5 text-left text-primary-ink">
           <div className="text-3xl">⏱️</div>
           <div className="mt-3 font-display text-xl font-extrabold">Full Prelims mock</div>
-          <div className="text-sm opacity-90">{ent?.caps.full_length_max_questions ? `Free plan · ${ent.caps.full_length_max_questions} Qs timed` : "GS Paper I · 100 Qs · 200 marks · 2 hours"}</div>
+          <div className="text-sm opacity-90">{ent?.plan === "FREE" ? "100 Qs · 2 hours · PYQs + question bank" : "GS Paper I · 100 Qs · 200 marks · 2 hours"}</div>
         </button>
         <div className="sticker rounded-3xl bg-ink p-5 text-left text-bg dark:bg-surface-2 dark:text-ink">
           <div className="text-3xl">✍️</div>
