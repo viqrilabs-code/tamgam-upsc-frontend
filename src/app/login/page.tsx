@@ -12,7 +12,7 @@ type Mode = "explore" | "email" | "admin";
 export default function Login() {
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState(AVATARS[0]);
-  const [mode, setMode] = useState<Mode>("explore");
+  const [mode, setMode] = useState<Mode>("email");      // sign-up first; "explore" (guest) is a choice, not the default
   const [consent, setConsent] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,6 +20,7 @@ export default function Login() {
   const [err, setErr] = useState<unknown>();
 
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "explore") setMode("explore");
     const s = getSession();
     if (s && s.kind !== "guest") window.location.href = s.admin ? "/admin/" : "/dashboard/";
   }, []);
@@ -61,17 +62,17 @@ export default function Login() {
       <div className="w-full max-w-md">
         <div className="mb-6 flex justify-center"><Logo className="text-2xl" /></div>
         <Card sticker className="p-7">
-          <h1 className="font-display text-3xl font-extrabold">{mode === "admin" ? "Admin sign-in 🛡️" : "Let's lock in 🔒"}</h1>
+          <h1 className="font-display text-3xl font-extrabold">{mode === "admin" ? "Admin sign-in 🛡️" : mode === "email" ? "Start free in 30 seconds" : "Let's lock in 🔒"}</h1>
           <p className="mt-1 text-sm text-ink-2">
             {mode === "explore" && "Pick a name and an avatar to look around. Sign in with Google or your email when you're ready to start."}
-            {mode === "email" && "Continue with Google or get a code by email — the same email is the same account on any device."}
+            {mode === "email" && "Continue with Google or get a code by email. New or returning — the same email is the same account on any device."}
             {mode === "admin" && "Only the registered admin email can sign in here."}
           </p>
           {mode !== "admin" && (
             <div className="mt-5">
               <Segmented value={mode} onChange={(m) => { setMode(m); setErr(undefined); }} options={[
-                { value: "explore", label: <span className="inline-flex items-center gap-1"><Eye size={14} /> Explore</span> },
-                { value: "email", label: <span className="inline-flex items-center gap-1"><Mail size={14} /> Sign in (Google or email)</span> }]} />
+                { value: "email", label: <span className="inline-flex items-center gap-1"><Mail size={14} /> Sign up / sign in</span> },
+                { value: "explore", label: <span className="inline-flex items-center gap-1"><Eye size={14} /> Just look around</span> }]} />
             </div>
           )}
 
@@ -90,8 +91,15 @@ export default function Login() {
 
           {mode === "email" && (
             <div className="mt-5 space-y-4">
-              {identity}
-              <p className="text-xs text-muted">Name and avatar are used only if this email is new to TamGam.</p>
+              <ul className="space-y-1 rounded-2xl bg-green-soft p-3 text-sm text-ink-2">
+                {["Full 100-question Prelims mocks", "13+ years of real UPSC papers in PYQ Lab", "Revision cards and progress tracking"].map((t) => (
+                  <li key={t} className="flex gap-2"><span className="font-bold text-green">✓</span>{t}</li>))}
+                <li className="pt-1 text-xs text-muted">Free with sign-up — no card, no trial timer.</li>
+              </ul>
+              <details className="rounded-2xl border-2 border-line px-3 py-2">
+                <summary className="cursor-pointer text-sm font-semibold text-ink-2">Pick a display name &amp; avatar (optional)</summary>
+                <div className="mt-3 space-y-4">{identity}</div>
+              </details>
               <EmailSignInForm name={name} avatar={avatar} onDone={() => { window.location.href = "/dashboard/"; }} />
             </div>
           )}

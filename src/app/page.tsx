@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, BarChart3, CalendarDays, NotebookPen, ScrollText, Target, Sparkles } from "lucide-react";
+import { ArrowRight, BarChart3, BookOpenCheck, CalendarDays, Globe2, NotebookPen, ScrollText, Target, Timer, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/AppShell";
 import { SiteFooter } from "@/components/PublicShell";
+import SampleQuiz from "@/components/SampleQuiz";
 import { api } from "@/lib/api";
 import { Chakra, Chip, LinkButton, Logo } from "@/components/ui";
 
@@ -16,9 +17,22 @@ const FEATURES = [
   { icon: BarChart3, title: "Analytics with no cap", body: "Topic mastery, a verdict against the PYQ benchmark, and one focused next step. Chance estimate unlocks only when there's enough data.", tone: "bg-lime/40", span: "" },
 ];
 
+const FREE = [
+  { icon: Timer, title: "Full 100-question Prelims mocks", body: "The real format: 2 hours, +2 / −0.66 marking, real PYQs mixed with our question bank. As many as you like." },
+  { icon: ScrollText, title: "13+ years of UPSC papers", body: "Take any year's actual Prelims paper in PYQ Lab, or practise by topic — with your strong and weak areas after each test." },
+  { icon: BookOpenCheck, title: "Revision cards", body: "One topic per card: introduction, the core, recent government initiatives and a conclusion." },
+  { icon: Globe2, title: "Geopolitics, explained", body: "World events through a UPSC lens, with sources — readable without even signing up." },
+];
+
+type Post = { id: string; slug: string; url: string; title: string; summary: string; published_at?: string };
+
 export default function Landing() {
   const [prices, setPrices] = useState<Record<string, { price_paise: number }>>({});
-  useEffect(() => { api<{ plans: Record<string, { price_paise: number }> }>("/api/v1/platform/plans").then((r) => setPrices(r.plans)).catch(() => {}); }, []);
+  const [posts, setPosts] = useState<Post[]>([]);
+  useEffect(() => {
+    api<{ plans: Record<string, { price_paise: number }> }>("/api/v1/platform/plans").then((r) => setPrices(r.plans)).catch(() => {});
+    api<{ items: Post[] }>("/api/v1/blog/posts").then((r) => setPosts(r.items.slice(0, 3))).catch(() => {});
+  }, []);
   const inr = (k: string) => (prices[k] ? `₹${prices[k].price_paise / 100}` : "");
   return (
     <div className="min-h-screen">
@@ -42,19 +56,22 @@ export default function Landing() {
             </span>
           </h1>
           <p className="mt-5 max-w-xl text-lg text-ink-2">
-            Serious prep, zero boring. Daily current affairs, real-pattern test series, PYQ analysis and
-            personalised one-page notes — priced for every aspirant.
+            Serious prep, zero boring. <b className="text-ink">Free full-length Prelims mocks and 13+ years of real UPSC papers</b> —
+            plus daily current affairs, Mains evaluation and personalised notes when you want more.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <LinkButton href="/login/" className="px-6 py-3 text-base">Start prepping <ArrowRight size={18} /></LinkButton>
-            <LinkButton href="/plans/" variant="lime" className="px-6 py-3 text-base">See plans</LinkButton>
+            <LinkButton href="/login/" className="px-6 py-3 text-base">Take a free full mock <ArrowRight size={18} /></LinkButton>
+            <a href="#try" className="inline-flex items-center gap-2 rounded-2xl border-2 border-ink px-6 py-3 text-base font-bold md:hidden">Try 5 questions first ↓</a>
           </div>
-          <p className="mt-6 text-xs text-muted">
-            Sign in with Google or email: Free Prelims tests{prices.DAILY_PASS ? ` · Daily Pass ${inr("DAILY_PASS")} · Monthly Pass ${inr("MONTHLY_PASS")}` : ""} — with progress tracking
+          <p className="mt-4 text-sm text-ink-2">Sign up with Google or email in 30 seconds · no card · <span className="hidden md:inline">or try 5 real questions right here →</span></p>
+          <p className="mt-2 text-xs text-muted">
+            Want more? <Link href="/plans/" className="font-semibold text-primary">Daily &amp; Monthly passes</Link>
+            {prices.DAILY_PASS ? ` from ${inr("DAILY_PASS")}` : ""} add Mains evaluation, notes and adaptive questions.
           </p>
         </div>
 
-        <div className="relative">
+        <div id="try" className="relative scroll-mt-6">
+          <SampleQuiz fallback={
           <div className="sticker rotate-2 rounded-[2rem] bg-surface p-6">
             <div className="flex items-center justify-between">
               <Chip tone="primary">GS III · Prelims</Chip>
@@ -75,12 +92,48 @@ export default function Landing() {
               💡 &ldquo;Must be unanimous&rdquo; is an absolute qualifier — in PYQs, statements like this are false more often than not.
             </div>
           </div>
-          <div className="sticker absolute -bottom-6 -left-4 -rotate-3 rounded-2xl bg-lime px-4 py-2 font-display font-extrabold text-[#17152b]">
-            🔥 12-day streak
-          </div>
-          <div className="absolute -right-3 -top-5 text-primary"><Chakra size={56} spin /></div>
+          } />
+          <div className="pointer-events-none absolute -right-3 -top-7 text-primary"><Chakra size={48} spin /></div>
         </div>
       </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-16">
+        <div className="rounded-[2rem] border-2 border-ink bg-green-soft p-6 md:p-8">
+          <Chip tone="green" className="mb-3">Free with sign-up · no card</Chip>
+          <h2 className="font-display text-3xl font-extrabold">Start practising today, free</h2>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {FREE.map(({ icon: Icon, title, body }) => (
+              <div key={title} className="rounded-3xl bg-surface p-5">
+                <Icon size={22} className="text-green" />
+                <h3 className="mt-3 font-display text-lg font-bold">{title}</h3>
+                <p className="mt-1 text-sm text-ink-2">{body}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <LinkButton href="/login/" className="px-6 py-3 text-base">Sign up free <ArrowRight size={18} /></LinkButton>
+            <span className="text-sm text-ink-2">Google or email · your progress is saved on every device</span>
+          </div>
+        </div>
+      </section>
+
+      {posts.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pb-16">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <h2 className="font-display text-3xl font-extrabold">Latest in geopolitics</h2>
+            <Link href="/geopolitics/" className="text-sm font-bold text-primary">All posts →</Link>
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {posts.map((p) => (
+              <a key={p.id} href={`/geopolitics/${p.slug}/`} className="rounded-3xl border border-line bg-surface p-5 transition hover:-translate-y-0.5">
+                <Globe2 size={18} className="text-primary" />
+                <h3 className="mt-2 font-display text-lg font-bold">{p.title}</h3>
+                <p className="mt-1 line-clamp-3 text-sm text-ink-2">{p.summary}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mx-auto max-w-6xl px-4 pb-20">
         <h2 className="font-display text-3xl font-extrabold">Everything you need. Nothing you don&apos;t.</h2>

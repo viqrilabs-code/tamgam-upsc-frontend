@@ -8,7 +8,11 @@ import { Card, ErrorBox, Loading, cx } from "../ui";
 
 type Day = { date: string; pageviews: number; visitors: number; members: number; guests: number; anonymous: number };
 type Win = { visitors_daily_sum: number; pageviews: number; members: number };
-type Report = { days: Day[]; today: Day; last_7: Win; last_30: Win; sections: [string, number][]; referrers: [string, number][] };
+type Report = { days: Day[]; today: Day; last_7: Win; last_30: Win; sections: [string, number][]; referrers: [string, number][];
+  funnel?: { step: string; people: number }[] };
+const STEP_LABEL: Record<string, string> = {
+  landing: "Visited the landing page", sample_start: "Tried the 5-question sample", sample_done: "Finished the sample",
+  signin_page: "Opened the sign-up page", signup: "Signed up (new account)", first_use: "Used a feature (first test, note…)" };
 
 export default function AdminVisitors() {
   const [days, setDays] = useState(30);
@@ -37,6 +41,25 @@ export default function AdminVisitors() {
         {tile("Visitor-days, last 7", d.last_7.visitors_daily_sum, `${d.last_7.pageviews.toLocaleString("en-IN")} page views`)}
         {tile(`Visitor-days, last ${Math.min(30, days)}`, d.last_30.visitors_daily_sum, `${d.last_30.pageviews.toLocaleString("en-IN")} page views`)}
       </div>
+
+      {d.funnel && (
+        <Card>
+          <div className="mb-1 font-display font-bold">Sign-up funnel · last {days} days</div>
+          <p className="mb-3 text-xs text-muted">People reaching each step (counted once per person per day). The % is against the step above — the biggest drop shows where visitors give up.</p>
+          <div className="space-y-2">
+            {d.funnel.map((f, k) => {
+              const top = Math.max(1, d.funnel![0].people, ...d.funnel!.map((x) => x.people));
+              const prev = k ? d.funnel![k - 1].people : 0;
+              return (
+                <div key={f.step} className="grid grid-cols-[minmax(0,14rem)_1fr_auto] items-center gap-3 text-sm">
+                  <span className="truncate">{STEP_LABEL[f.step] ?? f.step}</span>
+                  <span className="h-3 rounded-full bg-surface-2"><span className="block h-full rounded-full bg-primary" style={{ width: `${(f.people / top) * 100}%`, minWidth: f.people ? 4 : 0 }} /></span>
+                  <span className="w-24 text-right font-mono">{f.people}{k > 0 && prev > 0 && <span className="ml-1 text-xs text-muted">({Math.round((f.people / prev) * 100)}%)</span>}</span>
+                </div>);
+            })}
+          </div>
+        </Card>
+      )}
 
       <Card>
         <div className="mb-3 font-display font-bold">Visitors per day</div>
