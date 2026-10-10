@@ -5,12 +5,12 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   BarChart3, CalendarDays, Crown, History, LayoutGrid, LifeBuoy, LogOut, Moon, NotebookPen,
-  ScrollText, Shield, Sun, Target, UserRound, BookOpenCheck, Globe2,
+  ScrollText, Shield, Sun, Target, UserRound, BookOpenCheck, Globe2, MessageSquareHeart,
 } from "lucide-react";
 import { GuestPreview, SignInGate, UpgradeGate } from "./Gates";
 import LiveTests from "./LiveTests";
 import { openSignIn, signOut } from "@/lib/api";
-import { useSession, useTheme } from "@/lib/hooks";
+import { useFeedbackStatus, useSession, useTheme } from "@/lib/hooks";
 import { Logo, cx } from "./ui";
 
 const NAV = [
@@ -42,6 +42,7 @@ export default function AppShell({ children, wide = false, guestPreview }:
   { children: ReactNode; wide?: boolean; guestPreview?: Preview }) {
   const path = usePathname();
   const session = useSession();
+  const { status: feedback } = useFeedbackStatus(session);
   const active = (href: string) => path === href || path?.startsWith(href);
 
   return (
@@ -66,6 +67,12 @@ export default function AppShell({ children, wide = false, guestPreview }:
             active("/help/") ? "bg-primary text-primary-ink" : "text-ink-2 hover:bg-surface-2")}>
             <LifeBuoy size={18} /> Help &amp; complaints
           </Link>
+          {feedback?.eligible && (
+            <Link href="/feedback/" className={cx("flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold",
+              active("/feedback/") ? "bg-primary text-primary-ink" : "text-ink-2 hover:bg-surface-2")}>
+              <MessageSquareHeart size={18} /> Feedback &amp; review
+            </Link>
+          )}
           {session?.admin && (
             <Link href="/admin/" className={cx("flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold",
               active("/admin/") ? "bg-primary text-primary-ink" : "text-ink-2 hover:bg-surface-2")}>

@@ -91,3 +91,30 @@ export function usePageVisible(): boolean {
   }, []);
   return visible;
 }
+
+export type FeedbackStatus = { eligible: boolean; reviewed: boolean };
+const FB_KEY = "tamgam.feedback";
+let fbInflight: { uid: string; at: number; p: Promise<{ eligible: boolean; feedback: unknown }> } | null = null;  // one request per page
+
+/** Has this signed-in member used a feature yet (→ Feedback unlocks), and have they reviewed? Cached for the tab's
+ *  session once eligible, so most pages make no request; `refresh` after saving a review. */
+export function useFeedbackStatus(session: Session | null) {
+  const [st, setSt] = useState<FeedbackStatus | null>(null);
+  const load = useCallback(async (force = false) => {
+    if (!session || session.kind === "guest") { setSt(null); return; }
+    try {
+      const cached = force ? null : sessionStorage.getItem(`${FB_KEY}.${session.uid}`);
+      if (cached) { setSt(JSON.parse(cached)); return; }
+    } catch { /* storage blocked */ }
+    try {
+      if (force || !fbInflight || fbInflight.uid !== session.uid || Date.now() - fbInflight.at > 60_000)
+        fbInflight = { uid: session.uid, at: Date.now(), p: api<{ eligible: boolean; feedback: unknown }>("/api/v1/feedback/me") };
+      const r = await fbInflight.p;
+      const next = { eligible: r.eligible, reviewed: !!r.feedback };
+      setSt(next);
+      if (next.eligible) try { sessionStorage.setItem(`${FB_KEY}.${session.uid}`, JSON.stringify(next)); } catch { /* blocked */ }
+    } catch { setSt(null); }
+  }, [session]);
+  useEffect(() => { load(); }, [load]);
+  return { status: st, refresh: () => load(true) };
+}

@@ -9,6 +9,7 @@ import { Button, Card, Chip, ErrorBox, Loading, Ring } from "@/components/ui";
 import { api, content } from "@/lib/api";
 import { useAsync, useEntitlements, useSession } from "@/lib/hooks";
 import { SCOPE_LABEL, fmtDate, greeting, gsPapers } from "@/lib/labels";
+import FeedbackPrompt from "@/components/FeedbackPrompt";
 import LaunchOverlay from "@/components/LaunchOverlay";
 import { type LaunchState, bankTest, dailyQuiz, fullMainsMock, fullPrelimsMock, resultUrl } from "@/lib/tests";
 import type { Attempt, CACard } from "@/lib/types";
@@ -44,6 +45,7 @@ export default function Dashboard() {
     <AppShell guestPreview={{ emoji: "🏠", title: "Your UPSC home base", points: [
       "Daily goal ring, streaks and your score trend", "One-tap Daily CA quiz, full Prelims (100 Qs) and Mains (250 marks) mocks",
       "Today's newspaper distilled for UPSC", "A chance meter that unlocks when there's enough data — never hype"] }}>
+      <FeedbackPrompt className="mb-6" />
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="text-sm font-semibold text-muted">{greeting()},</div>

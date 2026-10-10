@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, CircleSlash, RotateCcw, XCircle } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import FeedbackPrompt from "@/components/FeedbackPrompt";
 import FreeMixNote from "@/components/FreeMixNote";
 import WaitingRoom from "@/components/WaitingRoom";
 import { Bar, Button, Card, Chip, ErrorBox, Loading, Modal, PageHeader, Ring, Segmented, cx } from "@/components/ui";
@@ -64,6 +65,7 @@ export default function ResultPage() {
       <PageHeader kicker={fmtDate(r.submitted_at)} title={r.title ?? "Result"}
         action={<Link href="/practice/" className="inline-flex items-center gap-2 text-sm font-bold text-primary"><RotateCcw size={14} /> New test</Link>} />
       {ent?.plan === "FREE" && <FreeMixNote className="mb-4" />}
+      <FeedbackPrompt className="mb-4" />
 
       <div className="grid gap-4 md:grid-cols-[auto_1fr]">
         <Card sticker className="flex items-center gap-6">

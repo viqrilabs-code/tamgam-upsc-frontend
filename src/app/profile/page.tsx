@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, ShieldCheck, Trash2 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { EmailSignInForm } from "@/components/Gates";
+import { FeedbackLink } from "@/components/FeedbackPrompt";
 import { Button, Card, ErrorBox, Loading, Modal, PageHeader } from "@/components/ui";
 import { api, downloadFile, openSignIn, signOut } from "@/lib/api";
 import { useAsync, useEntitlements, useSession } from "@/lib/hooks";
@@ -36,6 +37,7 @@ export default function Profile() {
   return (
     <AppShell>
       <PageHeader kicker="Profile" title="You, the aspirant" />
+      <FeedbackLink />
       {me.loading || !form ? <Loading /> : (
         <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
           <Card>
