@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   BarChart3, CalendarDays, Crown, History, LayoutGrid, LifeBuoy, LogOut, Moon, NotebookPen,
-  ScrollText, Shield, Sun, Target, UserRound, BookOpenCheck, Globe2, MessageSquareHeart,
+  ScrollText, Shield, Sun, Target, UserRound, BookOpenCheck, Globe2, MessageSquareHeart, Menu, X,
 } from "lucide-react";
 import { GuestPreview, SignInGate, UpgradeGate } from "./Gates";
 import LiveTests from "./LiveTests";
@@ -44,6 +44,19 @@ export default function AppShell({ children, wide = false, guestPreview }:
   const session = useSession();
   const { status: feedback } = useFeedbackStatus(session);
   const active = (href: string) => path === href || path?.startsWith(href);
+  const [menu, setMenu] = useState(false);
+  useEffect(() => { setMenu(false); }, [path]);
+  useEffect(() => {                                    // no background scrolling while the phone menu is open
+    document.body.style.overflow = menu ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [menu]);
+  const extra = [
+    { href: "/plans/", label: "Plans", icon: Crown },
+    { href: "/help/", label: "Help & complaints", icon: LifeBuoy },
+    ...(feedback?.eligible ? [{ href: "/feedback/", label: "Feedback & review", icon: MessageSquareHeart }] : []),
+    { href: "/profile/", label: "Profile", icon: UserRound },
+    ...(session?.admin ? [{ href: "/admin/", label: "Admin", icon: Shield }] : []),
+  ];
 
   return (
     <div className="min-h-screen">
@@ -101,10 +114,44 @@ export default function AppShell({ children, wide = false, guestPreview }:
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-line bg-bg/90 px-4 py-3 backdrop-blur lg:hidden">
         <Logo />
         <div className="flex items-center gap-2">
-          <Link href="/profile/" aria-label="Profile" className="grid h-10 w-10 place-items-center rounded-2xl border-2 border-line"><UserRound size={18} /></Link>
           <ThemeToggle />
+          <button onClick={() => setMenu(true)} aria-label="Open menu" aria-expanded={menu}
+            className="grid h-10 w-10 place-items-center rounded-2xl border-2 border-line text-ink"><Menu size={20} /></button>
         </div>
       </header>
+
+      {menu && (
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+          <button aria-label="Close menu" onClick={() => setMenu(false)} className="absolute inset-0 bg-ink/40" />
+          <div className="absolute inset-y-0 right-0 flex w-[min(20rem,88vw)] flex-col overflow-y-auto bg-surface px-4 pb-6 pt-4 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex min-w-0 items-center gap-2 font-semibold">
+                <span className="text-xl">{session?.avatar ?? "🦁"}</span><span className="truncate">{session?.name ?? "Menu"}</span>
+                {session?.kind === "guest" && <span className="rounded-full bg-surface-2 px-2 text-[10px] uppercase text-muted">guest</span>}
+              </div>
+              <button onClick={() => setMenu(false)} aria-label="Close menu" className="grid h-10 w-10 place-items-center rounded-2xl border-2 border-line"><X size={18} /></button>
+            </div>
+            <nav className="mt-4 flex flex-col gap-1">
+              {[...NAV, ...extra].map(({ href, label, icon: Icon }) => (
+                <Link key={href} href={href}
+                  className={cx("flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold",
+                    active(href) ? "bg-primary text-primary-ink" : "text-ink-2 hover:bg-surface-2")}>
+                  <Icon size={18} /> {label}
+                </Link>
+              ))}
+            </nav>
+            <div className="flex-1" />
+            {session?.kind === "guest" ? (
+              <button onClick={() => { setMenu(false); openSignIn(); }}
+                className="mt-6 rounded-2xl bg-primary px-4 py-3 text-sm font-bold text-primary-ink">Sign in with Google or email</button>
+            ) : null}
+            <button onClick={() => { signOut(); window.location.href = "/"; }}
+              className="mt-3 flex items-center justify-center gap-2 rounded-2xl border-2 border-danger px-4 py-3 text-sm font-bold text-danger">
+              <LogOut size={16} /> Sign out
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className={cx("px-4 pb-28 pt-6 lg:ml-64 lg:px-10 lg:pb-12 lg:pt-10", wide ? "" : "max-w-6xl")}>
         {session?.kind === "guest" && (

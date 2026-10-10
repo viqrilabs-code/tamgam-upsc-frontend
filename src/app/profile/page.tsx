@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, ShieldCheck, Trash2 } from "lucide-react";
+import { Download, LogOut, ShieldCheck, Trash2 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { EmailSignInForm } from "@/components/Gates";
 import { FeedbackLink } from "@/components/FeedbackPrompt";
@@ -83,6 +83,9 @@ export default function Profile() {
               </div>
             )}
           </Card>
+          <Button variant="outline" className="w-full" onClick={() => { signOut(); window.location.href = "/"; }}>
+            <LogOut size={16} /> Sign out
+          </Button>
           <Card>
             <div className="font-display text-lg font-bold">Your data, your call</div>
             <p className="mt-1 text-sm text-ink-2">Under India&apos;s DPDP Act you can export or delete everything we hold about you.</p>
