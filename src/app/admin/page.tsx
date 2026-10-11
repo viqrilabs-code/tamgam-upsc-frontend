@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeIndianRupee, BookOpen, BookOpenCheck, CreditCard, KeyRound, LayoutGrid, MessageSquareWarning, Newspaper, Eye, Globe2, MessageSquareHeart, ShieldCheck, UserCog, Users } from "lucide-react";
+import { BadgeIndianRupee, BookOpen, BookOpenCheck, CreditCard, KeyRound, LayoutGrid, MessageSquareWarning, Newspaper, Eye, Globe2, MessageSquareHeart, Activity, ShieldCheck, UserCog, Users } from "lucide-react";
 import AppShell from "@/components/AppShell";
+import AdminActivity from "@/components/admin/AdminActivity";
 import AdminAdmins, { type AdminRow } from "@/components/admin/AdminAdmins";
 import AdminBlog from "@/components/admin/AdminBlog";
 import AdminFeedback from "@/components/admin/AdminFeedback";
@@ -19,9 +20,9 @@ import { api } from "@/lib/api";
 import { useAsync, useSession } from "@/lib/hooks";
 import { FORMAT_LABEL, fmtDate } from "@/lib/labels";
 
-type Tab = "overview" | "visitors" | "users" | "admins" | "plans" | "payments" | "complaints" | "sources" | "ca" | "revision" | "blog" | "feedback" | "quality";
+type Tab = "overview" | "visitors" | "activity" | "users" | "admins" | "plans" | "payments" | "complaints" | "sources" | "ca" | "revision" | "blog" | "feedback" | "quality";
 const TABS: { id: Tab; label: string; icon: typeof Users }[] = [
-  { id: "overview", label: "Overview", icon: LayoutGrid }, { id: "visitors", label: "Visitors", icon: Eye }, { id: "users", label: "Users", icon: Users }, { id: "admins", label: "Admins", icon: UserCog },
+  { id: "overview", label: "Overview", icon: LayoutGrid }, { id: "visitors", label: "Visitors", icon: Eye }, { id: "activity", label: "Activity", icon: Activity }, { id: "users", label: "Users", icon: Users }, { id: "admins", label: "Admins", icon: UserCog },
   { id: "plans", label: "Plans & pricing", icon: BadgeIndianRupee }, { id: "payments", label: "Payments", icon: CreditCard }, { id: "complaints", label: "Complaints", icon: MessageSquareWarning },
   { id: "sources", label: "Sources (GS & optional)", icon: BookOpen }, { id: "ca", label: "Current affairs", icon: Newspaper }, { id: "revision", label: "Revision", icon: BookOpenCheck },
   { id: "blog", label: "Geopolitics blog", icon: Globe2 },
@@ -59,6 +60,7 @@ export default function Admin() {
       </div>
       {tab === "overview" && <AdminOverview go={setTab} />}
       {tab === "visitors" && <AdminVisitors />}
+      {tab === "activity" && <AdminActivity />}
       {tab === "users" && <AdminUsers />}
       {tab === "admins" && <AdminAdmins />}
       {tab === "plans" && <AdminPlans />}

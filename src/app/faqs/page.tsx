@@ -42,6 +42,7 @@ export default function Faqs() {
           <Q q="What do the member passes include?">
             <p><b>{p.DAILY_PASS?.name ?? "Daily Pass"}</b> ({inr(p.DAILY_PASS?.price_paise)} for 24 hours): every service once, plus unlimited current affairs, with your history and analytics saved to your number.</p>
             <p><b>{p.MONTHLY_PASS?.name ?? "Monthly Pass"}</b> ({inr(p.MONTHLY_PASS?.price_paise)} for 30 days): generous fair-use allowances for every service (e.g. 60 Prelims tests, 10 full mocks, 20 Mains practices, 4 full Mains mocks, 20 notes from uploads) plus unlimited current affairs and full analytics. See the full table on the <Link className="text-primary" href="/plans/">Plans</Link> page.</p>
+            <p><b>Longer passes</b> — 3 months ({inr(p.QUARTERLY_PASS?.price_paise)}), 6 months ({inr(p.HALF_YEARLY_PASS?.price_paise)}) and 12 months ({inr(p.YEARLY_PASS?.price_paise)}): unlimited Prelims and PYQ tests, more full mocks and Mains evaluations, at a lower price per month.</p>
           </Q>
           <Q q="Does a pass renew automatically?">Never. You pay only when you buy, and nothing is charged afterwards.</Q>
           <Q q="How can I pay?">UPI, debit and credit cards, netbanking and wallets through Razorpay&apos;s secure checkout. We never see your card or bank details.</Q>

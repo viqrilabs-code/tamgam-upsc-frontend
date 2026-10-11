@@ -12,7 +12,7 @@ type Plan = { name: string; tagline?: string; price_paise: number; days: number;
 type Resp = { plans: Record<string, Plan>; services: Record<string, string>; version: number; updated_by?: string;
   updated_at?: string; history: { version: number; at: string; by: string; prices: Record<string, number> }[] };
 
-const ORDER = ["FREE", "DAILY_PASS", "MONTHLY_PASS"];
+const ORDER = ["FREE", "DAILY_PASS", "MONTHLY_PASS", "QUARTERLY_PASS", "HALF_YEARLY_PASS", "YEARLY_PASS"];
 
 export default function AdminPlans() {
   const data = useAsync(() => api<Resp>("/api/v1/platform/admin/plans"), []);

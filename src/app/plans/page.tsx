@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, Minus, ShieldCheck } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { Button, Card, Chip, ErrorBox, Loading, Modal, PageHeader, cx } from "@/components/ui";
@@ -11,7 +11,7 @@ import { useAsync, useEntitlements, useSession } from "@/lib/hooks";
 type Plan = { name: string; price_paise: number; days: number; tagline?: string; services: Record<string, number>;
   caps?: { sectional_max_questions?: number; full_length_max_questions?: number } };
 type PlansResp = { plans: Record<string, Plan>; services: Record<string, string>; razorpay: boolean };
-const ORDER = ["FREE", "DAILY_PASS", "MONTHLY_PASS"];
+const PASSES: [string, number][] = [["MONTHLY_PASS", 1], ["QUARTERLY_PASS", 3], ["HALF_YEARLY_PASS", 6], ["YEARLY_PASS", 12]];
 
 export default function Plans() {
   const session = useSession();
@@ -21,6 +21,11 @@ export default function Plans() {
   const [err, setErr] = useState<unknown>();
   const [testOrder, setTestOrder] = useState<Order | null>(null);
   const [done, setDone] = useState<string | null>(null);
+  const [months, setMonths] = useState(1);
+  useEffect(() => {                                    // members on a longer pass see their own length first
+    const m = PASSES.find(([id]) => id === ent?.plan)?.[1];
+    if (m) setMonths(m);
+  }, [ent?.plan]);
 
   async function buy(planId: string) {
     if (!session || session.kind === "guest") { openSignIn("Sign in with your email to buy a member pass — it's linked to your email and keeps your progress."); return; }
@@ -39,6 +44,10 @@ export default function Plans() {
 
   if (!session) return null;
   const data = plans.data;
+  const passes = PASSES.filter(([id]) => data?.plans[id]);
+  const passId = (passes.find(([, m]) => m === months) ?? passes[0])?.[0] ?? "MONTHLY_PASS";
+  const monthly = data?.plans.MONTHLY_PASS?.price_paise ?? 0;
+  const ORDER = ["FREE", "DAILY_PASS", passId];
 
   return (
     <AppShell>
@@ -58,18 +67,30 @@ export default function Plans() {
             {ORDER.filter((id) => data.plans[id]).map((id) => {
               const p = data.plans[id];
               const current = ent?.plan === id;
-              const hot = id === "MONTHLY_PASS";
+              const hot = id === passId;
+              const m = PASSES.find(([pid]) => pid === id)?.[1];
+              const save = m && m > 1 && monthly ? Math.round((1 - p.price_paise / (monthly * m)) * 100) : 0;
               return (
                 <Card key={id} sticker={hot} className={cx("flex flex-col", hot && "bg-primary-soft")}>
-                  {hot && <Chip tone="lime" className="mb-2 self-start">best value</Chip>}
-                  <div className="font-display text-2xl font-extrabold">{p.name}</div>
+                  {hot && <Chip tone="lime" className="mb-2 self-start">{save > 0 ? `best value · save ${save}%` : "best value"}</Chip>}
+                  {hot ? (
+                    <label className="block">
+                      <span className="text-xs font-semibold text-muted">Choose how long</span>
+                      <select value={months} onChange={(e) => setMonths(Number(e.target.value))} aria-label="Pass length"
+                        className="mt-1 w-full rounded-2xl border-2 border-ink bg-surface px-3 py-2 font-display text-lg font-extrabold outline-none">
+                        {passes.map(([pid, mo]) => (
+                          <option key={pid} value={mo}>{mo === 1 ? "1 month" : mo === 12 ? "12 months (1 year)" : `${mo} months`} · {inr(data.plans[pid].price_paise)}</option>))}
+                      </select>
+                    </label>
+                  ) : <div className="font-display text-2xl font-extrabold">{p.name}</div>}
                   <div className="mt-2 font-mono text-4xl font-bold">{p.price_paise ? inr(p.price_paise) : "₹0"}
                     <span className="text-base text-muted">{p.days === 1 ? " / 24 hours" : p.days ? ` / ${p.days} days` : ""}</span></div>
+                  {m && m > 1 && <div className="mt-1 text-sm font-semibold text-green">≈ {inr(Math.round(p.price_paise / m / 100) * 100)} a month{save > 0 ? ` · ${save}% less than paying monthly` : ""}</div>}
                   <p className="mt-2 text-sm text-ink-2">{p.tagline}</p>
                   <div className="flex-1" />
                   {p.price_paise > 0 && ent?.plan !== "ADMIN" ? (
                     <Button className="mt-5" variant={hot ? "primary" : "outline"} loading={busy === id} onClick={() => buy(id)}>
-                      {current ? "Buy again (fresh allowances)" : `Get ${p.name}`}</Button>
+                      {current ? "Buy again (fresh allowances)" : `Get ${p.name} · ${inr(p.price_paise)}`}</Button>
                   ) : <div className="mt-5 text-center text-sm font-semibold text-muted">{current ? "You're on this plan" : ent?.plan === "ADMIN" ? "Included for admins" : "Included with sign-in"}</div>}
                 </Card>
               );

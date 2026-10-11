@@ -6,12 +6,21 @@ import { api } from "@/lib/api";
 import { useAsync } from "@/lib/hooks";
 import { fmtDate } from "@/lib/labels";
 import { Button, Card, Chip, ErrorBox, Loading, Modal, cx } from "../ui";
+import ActivityList, { type ActivityItem, when } from "./ActivityList";
 
 type U = { uid: string; name?: string; avatar?: string; created_at?: string; last_active_at?: string; email?: string; phone?: string;
-  marketing_consent?: boolean; blocked: boolean; roles: string[]; plan: string; valid_till?: string };
+  marketing_consent?: boolean; blocked: boolean; roles: string[]; plan: string; valid_till?: string;
+  last_activity_at?: string | null; activity_counts?: Record<string, number> };
 type Detail = U & { profile: Record<string, unknown>; entitlements: { services: Record<string, { used: number }> };
   orders: { _id: string; plan: string; amount: number; status: string; created_at: string }[];
-  attempts: { count: number }; complaints: { _id: string; subject: string; status: string }[] };
+  attempts: { count: number }; complaints: { _id: string; subject: string; status: string }[];
+  activity?: { items: ActivityItem[] } };
+
+function usageLine(c: Record<string, number> = {}) {
+  const parts: [number, string][] = [[c.test_submitted ?? 0, "tests"], [(c.mains_submitted ?? 0), "Mains"],
+    [(c.note_opened ?? 0) + (c.note_uploaded ?? 0), "notes"], [c.revision_read ?? 0, "revision"]];
+  return parts.filter(([n]) => n).map(([n, l]) => `${n} ${l}`).join(" · ");
+}
 
 export default function AdminUsers() {
   const [q, setQ] = useState("");
@@ -33,7 +42,7 @@ export default function AdminUsers() {
         <Card className="overflow-x-auto p-0">
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase tracking-wider text-muted">
-              <tr><th className="p-3">User</th><th className="p-3">Email · phone</th><th className="p-3">Plan</th><th className="p-3">Joined</th><th className="p-3">Status</th></tr>
+              <tr><th className="p-3">User</th><th className="p-3">Email · phone</th><th className="p-3">Plan</th><th className="p-3">Activity</th><th className="p-3">Joined</th><th className="p-3">Status</th></tr>
             </thead>
             <tbody className="divide-y divide-line">
               {users.data?.items.map((u) => (
@@ -43,6 +52,9 @@ export default function AdminUsers() {
                     <div className="space-y-0.5"><div className="text-sm">{u.email ?? "—"}</div>
                       {u.phone && <Chip tone="green">{u.phone}{u.marketing_consent ? " · marketing ok" : ""}</Chip>}</div>)}</td>
                   <td className="p-3"><Chip tone={u.plan === "FREE" ? "neutral" : "primary"}>{u.plan}</Chip></td>
+                  <td className="p-3">{u.last_activity_at ? (
+                    <><div className="text-xs font-semibold">{when(u.last_activity_at)}</div>
+                      <div className="text-xs text-muted">{usageLine(u.activity_counts) || "signed in"}</div></>) : <span className="text-xs text-muted">no activity yet</span>}</td>
                   <td className="p-3 text-muted">{fmtDate(u.created_at)}</td>
                   <td className="p-3 space-x-1">{u.blocked && <Chip tone="danger">blocked</Chip>}{u.roles.map((r) => <Chip key={r} tone="saffron">{r}</Chip>)}</td>
                 </tr>
@@ -57,7 +69,7 @@ export default function AdminUsers() {
   );
 }
 
-function UserDrawer({ uid, onClose }: { uid: string; onClose: () => void }) {
+export function UserDrawer({ uid, onClose }: { uid: string; onClose: () => void }) {
   const d = useAsync(() => api<Detail>(`/api/v1/platform/admin/users/${uid}`), [uid]);
   const [plan, setPlan] = useState("MONTHLY_PASS");
   const [err, setErr] = useState<unknown>();
@@ -107,12 +119,19 @@ function UserDrawer({ uid, onClose }: { uid: string; onClose: () => void }) {
               <div className="text-xs font-bold uppercase text-muted">Plan & quota</div>
               <div className="flex flex-wrap items-center gap-2">
                 <select value={plan} onChange={(e) => setPlan(e.target.value)} className="rounded-xl border-2 border-line bg-bg px-2 py-1.5 text-sm">
-                  {["DAILY_PASS", "MONTHLY_PASS", "FREE"].map((p) => <option key={p}>{p}</option>)}
+                  {["DAILY_PASS", "MONTHLY_PASS", "QUARTERLY_PASS", "HALF_YEARLY_PASS", "YEARLY_PASS", "FREE"].map((p) => <option key={p}>{p}</option>)}
                 </select>
                 <Button onClick={() => patch({ grant_plan: { plan } })}><Crown size={14} /> Grant</Button>
                 <Button variant="outline" onClick={() => patch({ reset_quota: true })}>Reset allowances</Button>
               </div>
               <div className="text-xs text-muted">Used in this pass: {Object.entries(d.data.entitlements.services).filter(([, v]) => v.used).map(([k, v]) => `${k.replace("_", " ")} ${v.used}`).join(" · ") || "nothing"}</div>
+            </section>
+
+            <section>
+              <div className="mb-1 text-xs font-bold uppercase text-muted">Activity{d.data.activity?.items.length ? ` · ${d.data.activity.items.length} actions` : ""}</div>
+              <div className="max-h-80 overflow-y-auto rounded-2xl border border-line px-3">
+                <ActivityList items={d.data.activity?.items ?? []} />
+              </div>
             </section>
 
             <section>
